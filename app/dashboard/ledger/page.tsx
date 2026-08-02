@@ -45,10 +45,12 @@ export default function LedgerPage() {
   }, [selectedId, startDate, endDate])
 
   const fetchAccounts = async () => {
-    const { data } = await supabase.from('accounts').select('id, name, type').order('type').order('display_order')
+    const { data } = await supabase.from('accounts').select('id, name, type').order('display_order')
     if (data) {
-      setAccounts(data)
-      if (data.length > 0) setSelectedId(data[0].id)
+      const typeOrder: Record<string, number> = { asset: 0, liability: 1, income: 2, expense: 3 }
+      const sorted = [...data].sort((a, b) => (typeOrder[a.type] ?? 9) - (typeOrder[b.type] ?? 9))
+      setAccounts(sorted)
+      if (sorted.length > 0) setSelectedId(sorted[0].id)
     }
   }
 

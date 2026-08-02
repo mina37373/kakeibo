@@ -42,8 +42,10 @@ export default function BalanceSheetPage() {
         debitMap[e.account_id] = (debitMap[e.account_id] ?? 0) + (e.debit_amount ?? 0)
         creditMap[e.account_id] = (creditMap[e.account_id] ?? 0) + (e.credit_amount ?? 0)
       })
+      const typeOrder: Record<string, number> = { asset: 0, liability: 1 }
       setAccounts(accs
         .filter((a: any) => a.type === 'asset' || a.type === 'liability')
+        .sort((a: any, b: any) => (typeOrder[a.type] ?? 9) - (typeOrder[b.type] ?? 9))
         .map((a: any) => {
           const d = debitMap[a.id] ?? 0
           const c = creditMap[a.id] ?? 0
