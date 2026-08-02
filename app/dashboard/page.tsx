@@ -139,8 +139,8 @@ export default function DashboardPage() {
       {(recurringAlerts.length > 0 || creditAlerts.length > 0) && (
         <div className="px-5 pb-2 flex flex-col gap-2">
           {recurringAlerts.map(r => {
-            const urgent = r.daysUntil === 0
-            const label = urgent ? '今日が引き落とし日' : r.daysUntil === 1 ? '明日が引き落とし日' : `${r.daysUntil}日後に引き落とし`
+            const urgent = r.daysUntil <= 1
+            const label = r.daysUntil === 0 ? '今日が引き落とし日' : r.daysUntil === 1 ? '明日が引き落とし日（残高確認！）' : `${r.daysUntil}日後に引き落とし`
             return (
               <button key={r.id} onClick={() => router.push('/dashboard/recurring')}
                 className="w-full text-left rounded-2xl border px-4 py-3 flex items-center gap-3"
@@ -157,8 +157,8 @@ export default function DashboardPage() {
             )
           })}
           {creditAlerts.map(c => {
-            const urgent = c.daysUntil === 0
-            const label = urgent ? '今日がクレカ引き落とし日' : c.daysUntil === 1 ? '明日がクレカ引き落とし日' : `${c.daysUntil}日後にクレカ引き落とし`
+            const urgent = c.daysUntil <= 1
+            const label = c.daysUntil === 0 ? '今日がクレカ引き落とし日' : c.daysUntil === 1 ? '明日がクレカ引き落とし日（残高確認！）' : `${c.daysUntil}日後にクレカ引き落とし`
             return (
               <button key={c.id} onClick={() => router.push('/dashboard/credit-payment')}
                 className="w-full text-left rounded-2xl border px-4 py-3 flex items-center gap-3"
