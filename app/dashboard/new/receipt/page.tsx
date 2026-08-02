@@ -529,7 +529,7 @@ export default function ReceiptInputPage() {
                           color: line.taxRate === r ? '#fff' : 'var(--text3)',
                         }}>{r === 0 ? '非課税' : `${r}%`}</button>
                     ))}
-                    {!line.taxIncluded && line.taxRate > 0 && line.amount && (
+                    {line.taxRate > 0 && line.amount && (
                       <span className="text-xs ml-auto" style={{ color: 'var(--text3)' }}>
                         税¥{taxAmt.toLocaleString()} → <span style={{ color: 'var(--text)' }}>¥{totalAmt.toLocaleString()}</span>
                       </span>
