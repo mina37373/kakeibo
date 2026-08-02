@@ -81,7 +81,7 @@ export default function PLPage() {
     const amtField = type === 'income' ? 'credit_amount' : 'debit_amount'
     const { data } = await supabase
       .from('journal_entries')
-      .select('debit_amount, credit_amount, memo, transactions!inner(id, date, description)')
+      .select('debit_amount, credit_amount, memo, transactions!inner(id, date, description, memo)')
       .eq('account_id', accountId)
       .gte('transactions.date', startDate)
       .lte('transactions.date', endDate)
@@ -101,7 +101,8 @@ export default function PLPage() {
           }
         }
         grouped[txnId].total += e[amtField] ?? 0
-        grouped[txnId].lines.push({ memo: e.memo ?? '', amount: e[amtField] ?? 0 })
+        const lineMemo = e.memo || e.transactions?.memo || ''
+        grouped[txnId].lines.push({ memo: lineMemo, amount: e[amtField] ?? 0 })
       })
       setDetails(Object.values(grouped))
     }
@@ -145,7 +146,7 @@ export default function PLPage() {
                     <span className="text-xs font-medium" style={{ color: type === 'income' ? 'var(--accent)' : 'var(--text2)' }}>
                       ¥{d.total.toLocaleString()}
                     </span>
-                    {d.lines.length > 1 && <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{expandedTxn === d.txnId ? '▲' : '▼'}</span>}
+                    {(d.lines.length > 1 || d.lines.some(l => l.memo)) && <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{expandedTxn === d.txnId ? '▲' : '▼'}</span>}
                   </div>
                 </div>
                 {/* 展開：内容・各金額 */}
@@ -153,7 +154,7 @@ export default function PLPage() {
                   <div className="pb-1" style={{ backgroundColor: 'var(--bg2)' }}>
                     {d.lines.map((line, j) => (
                       <div key={j} className="flex justify-between items-center px-8 py-1">
-                        <p className="text-xs" style={{ color: 'var(--text3)' }}>{line.memo || `明細${j + 1}`}</p>
+                        <p className="text-xs" style={{ color: 'var(--text3)' }}>{line.memo || '（内容なし）'}</p>
                         <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{line.amount.toLocaleString()}</p>
                       </div>
                     ))}
