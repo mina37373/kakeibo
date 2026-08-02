@@ -23,9 +23,7 @@ export default function LoginPage() {
       if (error) setError('メールアドレスまたはパスワードが違います')
       else router.push('/dashboard')
     } else if (mode === 'reset') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://kakeibo-q99m.vercel.app/login',
-      })
+      const { error } = await supabase.auth.resetPasswordForEmail(email)
       if (error) setError('メール送信に失敗しました: ' + error.message)
       else setResetSent(true)
     } else {
