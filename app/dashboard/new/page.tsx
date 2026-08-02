@@ -146,7 +146,11 @@ function NewTransactionForm() {
     }
   }
 
-  const filteredAccounts = accounts.filter(a => a.type === type)
+  const pinnedIds: string[] = JSON.parse(localStorage.getItem('pinned_accounts') ?? '[]')
+  const filteredAccounts = [
+    ...accounts.filter(a => a.type === type && pinnedIds.includes(a.id)),
+    ...accounts.filter(a => a.type === type && !pinnedIds.includes(a.id)),
+  ]
   const assetAccounts = accounts.filter(a => a.type === 'asset')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -344,10 +348,10 @@ function NewTransactionForm() {
                         className="py-2 px-3 rounded-xl text-xs font-medium border transition-colors"
                         style={{
                           backgroundColor: accountId === acc.id ? 'var(--accent)' : 'var(--bg3)',
-                          borderColor: accountId === acc.id ? 'var(--accent)' : 'var(--border)',
+                          borderColor: accountId === acc.id ? 'var(--accent)' : pinnedIds.includes(acc.id) ? 'var(--text2)' : 'var(--border)',
                           color: accountId === acc.id ? '#fff' : 'var(--text)',
                         }}>
-                        {acc.name}
+                        {pinnedIds.includes(acc.id) ? '📌 ' : ''}{acc.name}
                       </button>
                     ))}
                   </div>

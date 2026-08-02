@@ -52,6 +52,13 @@ export default function SettingsPage() {
   const [newPaymentDay, setNewPaymentDay] = useState('10')
   const [newDebitPmId, setNewDebitPmId] = useState('')
   const [tab, setTab] = useState<'accounts' | 'payments' | 'theme' | 'opening' | 'alert'>('accounts')
+  const [pinnedIds, setPinnedIds] = useState<string[]>(() => JSON.parse(localStorage.getItem('pinned_accounts') ?? '[]'))
+
+  const togglePin = (id: string) => {
+    const next = pinnedIds.includes(id) ? pinnedIds.filter(p => p !== id) : [...pinnedIds, id]
+    setPinnedIds(next)
+    localStorage.setItem('pinned_accounts', JSON.stringify(next))
+  }
   const [recurringAlertDays, setRecurringAlertDays] = useState(() => Number(localStorage.getItem('alert_recurring_days') ?? 7))
   const [recurringUrgentDays, setRecurringUrgentDays] = useState(() => Number(localStorage.getItem('alert_recurring_urgent') ?? 1))
   const [creditAlertDays, setCreditAlertDays] = useState(() => Number(localStorage.getItem('alert_credit_days') ?? 7))
@@ -311,10 +318,13 @@ export default function SettingsPage() {
                         <SortableItem key={acc.id} id={acc.id}>
                           {handle => (
                             <div className="rounded-xl border px-3 py-3 flex items-center gap-2"
-                              style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
+                              style={{ backgroundColor: 'var(--bg2)', borderColor: pinnedIds.includes(acc.id) ? 'var(--accent)' : 'var(--border)' }}>
                               {handle}
                               <span className="w-2 h-2 rounded-full bg-red-500 inline-block shrink-0" />
                               <span className="text-sm flex-1" style={{ color: 'var(--text)' }}>{acc.name}</span>
+                              <button onClick={() => togglePin(acc.id)} className="text-sm px-1" title="ピン留め">
+                                {pinnedIds.includes(acc.id) ? '📌' : '📍'}
+                              </button>
                               <button onClick={() => deleteAccount(acc.id)} className="text-xs opacity-40 hover:opacity-100" style={{ color: 'var(--text3)' }}>削除</button>
                             </div>
                           )}
@@ -339,10 +349,13 @@ export default function SettingsPage() {
                         <SortableItem key={acc.id} id={acc.id}>
                           {handle => (
                             <div className="rounded-xl border px-3 py-3 flex items-center gap-2"
-                              style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
+                              style={{ backgroundColor: 'var(--bg2)', borderColor: pinnedIds.includes(acc.id) ? 'var(--accent)' : 'var(--border)' }}>
                               {handle}
                               <span className="w-2 h-2 rounded-full bg-green-500 inline-block shrink-0" />
                               <span className="text-sm flex-1" style={{ color: 'var(--text)' }}>{acc.name}</span>
+                              <button onClick={() => togglePin(acc.id)} className="text-sm px-1" title="ピン留め">
+                                {pinnedIds.includes(acc.id) ? '📌' : '📍'}
+                              </button>
                               <button onClick={() => deleteAccount(acc.id)} className="text-xs opacity-40 hover:opacity-100" style={{ color: 'var(--text3)' }}>削除</button>
                             </div>
                           )}
