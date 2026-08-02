@@ -102,6 +102,7 @@ export default function DashboardPage() {
         { icon: '≡', label: '取引一覧', path: '/dashboard/transactions' },
         { icon: '💳', label: 'クレカ引き落とし', path: '/dashboard/credit-payment' },
         { icon: '↻', label: '定期支払い', path: '/dashboard/recurring' },
+        { icon: '📅', label: '引き落とし', path: '/dashboard/calendar' },
       ],
     },
     {
@@ -119,7 +120,6 @@ export default function DashboardPage() {
     {
       label: 'その他',
       items: [
-        { icon: '📅', label: '引き落とし', path: '/dashboard/calendar' },
         { icon: '↓', label: 'エクスポート', path: '/dashboard/export' },
         { icon: '⚙', label: '設定', path: '/dashboard/settings' },
       ],
@@ -184,22 +184,21 @@ export default function DashboardPage() {
       )}
 
       {/* 収支カード */}
-        <div className="rounded-2xl border p-5" style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
-          <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>{monthLabel}</p>
-          <div className="mb-4">
-            <p className="text-xs" style={{ color: 'var(--text2)' }}>収支バランス</p>
-            <p className="text-3xl font-bold mt-0.5" style={{ color: balance >= 0 ? 'var(--accent)' : 'var(--text)' }}>
+        <div className="rounded-xl border px-4 py-3 flex items-center gap-4" style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs" style={{ color: 'var(--text3)' }}>{monthLabel}　収支バランス</p>
+            <p className="text-xl font-bold mt-0.5" style={{ color: balance >= 0 ? 'var(--accent)' : 'var(--text)' }}>
               {balance >= 0 ? '+' : ''}¥{balance.toLocaleString()}
             </p>
           </div>
-          <div className="flex gap-3">
-            <div className="flex-1 rounded-xl p-3" style={{ backgroundColor: 'var(--bg3)' }}>
+          <div className="flex gap-3 shrink-0">
+            <div className="text-right">
               <p className="text-xs" style={{ color: 'var(--text3)' }}>収入</p>
-              <p className="font-semibold text-sm mt-0.5" style={{ color: 'var(--accent)' }}>¥{monthIncome.toLocaleString()}</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>¥{monthIncome.toLocaleString()}</p>
             </div>
-            <div className="flex-1 rounded-xl p-3" style={{ backgroundColor: 'var(--bg3)' }}>
+            <div className="text-right">
               <p className="text-xs" style={{ color: 'var(--text3)' }}>支出</p>
-              <p className="font-semibold text-sm mt-0.5" style={{ color: 'var(--text2)' }}>¥{monthTotal.toLocaleString()}</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text2)' }}>¥{monthTotal.toLocaleString()}</p>
             </div>
           </div>
         </div>
