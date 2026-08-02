@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Page, Header } from '@/components/ui'
 
-type Entry = { id: string; debit_amount: number; credit_amount: number; accounts: { name: string; type: string } }
+type Entry = { id: string; debit_amount: number; credit_amount: number; memo?: string | null; accounts: { name: string; type: string } }
 type Transaction = {
   id: string; date: string; description: string; memo: string
   receipt_url: string | null; created_at: string; journal_entries: Entry[]
@@ -34,7 +34,7 @@ export default function TransactionDetailPage() {
   const fetchTransaction = async () => {
     const { data } = await supabase
       .from('transactions')
-      .select(`*, journal_entries(*, accounts(name, type))`)
+      .select(`*, journal_entries(id, debit_amount, credit_amount, memo, accounts(name, type))`)
       .eq('id', id).single()
     if (data) {
       setTxn(data)
@@ -197,10 +197,13 @@ export default function TransactionDetailPage() {
                   <div key={entry.id} className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
                     style={{ borderColor: 'var(--border)' }}>
                     <div>
-                      <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>{entry.accounts?.name}</span>
-                      <span className="text-xs ml-2 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg3)', color: 'var(--text3)' }}>
-                        {entry.accounts?.type === 'expense' ? '支出' : entry.accounts?.type === 'income' ? '収入' : entry.accounts?.type === 'asset' ? '資産' : '負債'}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>{entry.accounts?.name}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg3)', color: 'var(--text3)' }}>
+                          {entry.accounts?.type === 'expense' ? '支出' : entry.accounts?.type === 'income' ? '収入' : entry.accounts?.type === 'asset' ? '資産' : '負債'}
+                        </span>
+                      </div>
+                      {entry.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{entry.memo}</p>}
                     </div>
                     <div className="flex gap-3 text-xs">
                       {entry.debit_amount > 0 && <span style={{ color: 'var(--text2)' }}>借 ¥{entry.debit_amount.toLocaleString()}</span>}

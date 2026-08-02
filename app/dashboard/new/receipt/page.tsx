@@ -337,7 +337,7 @@ export default function ReceiptInputPage() {
       const entries: any[] = []
       for (const line of validLines) {
         const amt = calcTaxIncluded(line)
-        entries.push({ transaction_id: txn.id, account_id: line.accountId, debit_amount: amt, credit_amount: 0 })
+        entries.push({ transaction_id: txn.id, account_id: line.accountId, debit_amount: amt, credit_amount: 0, memo: line.memo || null })
         entries.push({ transaction_id: txn.id, account_id: pm.account_id, debit_amount: 0, credit_amount: amt })
       }
       await supabase.from('journal_entries').insert(entries)
