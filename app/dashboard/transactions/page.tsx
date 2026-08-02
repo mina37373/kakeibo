@@ -144,11 +144,7 @@ export default function TransactionsPage() {
                       return (
                         <div
                           key={txn.id}
-                          onClick={() => {
-                            const expEntries = txn.journal_entries.filter(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
-                            const isReceipt = expEntries.length > 1 || expEntries.some(e => e.memo)
-                            router.push(isReceipt ? `/dashboard/new/receipt?edit=${txn.id}` : `/dashboard/transactions/${txn.id}`)
-                          }}
+                          onClick={() => router.push(`/dashboard/transactions/${txn.id}`)}
                           className="rounded-xl border px-4 py-3 flex items-center gap-3 cursor-pointer transition-opacity active:opacity-70"
                           style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}
                         >
