@@ -227,14 +227,14 @@ export default function TransactionDetailPage() {
                         <div className="px-3 py-2.5">
                           {d ? <>
                             <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{d.accounts?.name}</p>
-                            <p className="text-xs" style={{ color: 'var(--text3)' }}>{typeLabel(d.accounts?.type)} ¥{d.debit_amount.toLocaleString()}</p>
+                            <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{d.debit_amount.toLocaleString()}</p>
                             {d.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{d.memo}</p>}
                           </> : null}
                         </div>
                         <div className="px-3 py-2.5 border-l" style={{ borderColor: 'var(--border)' }}>
                           {c ? <>
                             <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{c.accounts?.name}</p>
-                            <p className="text-xs" style={{ color: 'var(--text3)' }}>{typeLabel(c.accounts?.type)} ¥{c.credit_amount.toLocaleString()}</p>
+                            <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{c.credit_amount.toLocaleString()}</p>
                             {c.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{c.memo}</p>}
                           </> : null}
                         </div>
