@@ -13,18 +13,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setEmail(session.user.email ?? '')
-        fetchMonthTotal()
-      } else {
-        // URLハッシュからセッションが復元されるのを少し待つ
-        setTimeout(() => {
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) router.push('/login')
-            else { setEmail(session.user.email ?? ''); fetchMonthTotal() }
-          })
-        }, 1000)
-      }
+      if (!session) router.push('/login')
+      else { setEmail(session.user.email ?? ''); fetchMonthTotal() }
     })
   }, [router])
 
