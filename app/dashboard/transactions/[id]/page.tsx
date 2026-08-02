@@ -48,11 +48,10 @@ export default function TransactionDetailPage() {
   }
 
   const getAmountFromEntries = (entries: Entry[]) => {
-    const exp = entries.find(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
-    if (exp) return { amount: exp.debit_amount, type: 'expense' as const }
-    const inc = entries.find(e => e.accounts?.type === 'income' && e.credit_amount > 0)
-    if (inc) return { amount: inc.credit_amount, type: 'income' as const }
-    // 振替
+    const expEntries = entries.filter(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
+    if (expEntries.length > 0) return { amount: expEntries.reduce((s, e) => s + e.debit_amount, 0), type: 'expense' as const }
+    const incEntries = entries.filter(e => e.accounts?.type === 'income' && e.credit_amount > 0)
+    if (incEntries.length > 0) return { amount: incEntries.reduce((s, e) => s + e.credit_amount, 0), type: 'income' as const }
     const dr = entries.find(e => e.debit_amount > 0)
     if (dr) return { amount: dr.debit_amount, type: 'transfer' as const }
     return { amount: 0, type: 'expense' as const }
