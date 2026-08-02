@@ -41,6 +41,8 @@ function ReceiptInputContent() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [swipedLineId, setSwipedLineId] = useState<number | null>(null)
+  const [accountQuery, setAccountQuery] = useState<Record<number, string>>({})
+  const [accountOpen, setAccountOpen] = useState<number | null>(null)
   let nextId = 100
 
   useEffect(() => {
@@ -574,17 +576,46 @@ function ReceiptInputContent() {
                   {/* 1行目: 科目・金額・削除 */}
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs w-4 shrink-0 text-center" style={{ color: 'var(--text3)' }}>{i + 1}</span>
-                    <select value={line.accountId} onChange={e => {
-                      const acc = accounts.find(a => a.id === e.target.value)
-                      const updates: Partial<Line> = { accountId: e.target.value }
-                      if (acc?.name === '食費') updates.taxRate = 8
-                      setLines(prev => prev.map(l => l.id === line.id ? { ...l, ...updates } : l))
-                    }}
-                      className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none min-w-0"
-                      style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: line.accountId ? 'var(--text)' : 'var(--text3)' }}>
-                      <option value="">科目</option>
-                      {expenseAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                    </select>
+                    {/* 科目コンボボックス */}
+                    <div className="flex-1 relative min-w-0">
+                      <input
+                        type="text"
+                        value={accountOpen === line.id
+                          ? (accountQuery[line.id] ?? '')
+                          : (expenseAccounts.find(a => a.id === line.accountId)?.name ?? '')}
+                        placeholder="科目"
+                        onFocus={() => {
+                          setAccountOpen(line.id)
+                          setAccountQuery(q => ({ ...q, [line.id]: '' }))
+                        }}
+                        onChange={e => setAccountQuery(q => ({ ...q, [line.id]: e.target.value }))}
+                        onBlur={() => setTimeout(() => setAccountOpen(null), 150)}
+                        className="w-full rounded-lg border px-2 py-1.5 text-xs outline-none min-w-0"
+                        style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: line.accountId ? 'var(--text)' : 'var(--text3)' }}
+                      />
+                      {accountOpen === line.id && (() => {
+                        const q = (accountQuery[line.id] ?? '').toLowerCase()
+                        const filtered = expenseAccounts.filter(a => a.name.includes(q))
+                        return filtered.length > 0 ? (
+                          <div className="absolute left-0 right-0 top-full mt-0.5 rounded-lg border shadow-lg z-20 overflow-hidden"
+                            style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
+                            {filtered.map(a => (
+                              <button key={a.id} type="button"
+                                onMouseDown={() => {
+                                  const updates: Partial<Line> = { accountId: a.id }
+                                  if (a.name === '食費') updates.taxRate = 8
+                                  setLines(prev => prev.map(l => l.id === line.id ? { ...l, ...updates } : l))
+                                  setAccountOpen(null)
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs border-b last:border-b-0"
+                                style={{ borderColor: 'var(--border)', color: 'var(--text)', backgroundColor: a.id === line.accountId ? 'var(--bg3)' : 'transparent' }}>
+                                {a.name}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null
+                      })()}
+                    </div>
                     <div className="flex items-center gap-0.5 rounded-lg border px-2 py-1.5 w-28 shrink-0"
                       style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)' }}>
                       <span className="text-xs shrink-0" style={{ color: 'var(--text3)' }}>¥</span>
