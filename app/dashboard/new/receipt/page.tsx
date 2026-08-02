@@ -260,6 +260,7 @@ export default function ReceiptInputPage() {
   }
 
   const subtotal = lines.reduce((s, l) => s + calcTaxIncluded(l), 0)
+  const pretotal = lines.reduce((s, l) => s + (Number(l.amount) || 0), 0)
   const tax8 = lines.filter(l => l.taxRate === 8).reduce((s, l) => s + calcTax(l), 0)
   const tax10 = lines.filter(l => l.taxRate === 10).reduce((s, l) => s + calcTax(l), 0)
   const receiptTotalNum = Number(receiptTotal) || 0
@@ -553,18 +554,41 @@ export default function ReceiptInputPage() {
 
         {/* 合計チェック */}
         <div className="rounded-2xl border p-4 flex flex-col gap-3" style={{ backgroundColor: 'var(--bg2)', borderColor: matched ? 'var(--accent)' : 'var(--border)' }}>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>明細合計（税込）</span>
-            <span className="text-lg font-bold" style={{ color: 'var(--text)' }}>¥{subtotal.toLocaleString()}</span>
-          </div>
-          <div className="flex flex-col gap-1 pl-1">
-            <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
-              <span>消費税（8%）</span><span>¥{tax8.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
-              <span>消費税（10%）</span><span>¥{tax10.toLocaleString()}</span>
-            </div>
-          </div>
+          {defaultTaxIncluded ? (
+            <>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>合計（税込）</span>
+                <span className="text-lg font-bold" style={{ color: 'var(--text)' }}>¥{subtotal.toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col gap-1 pl-1">
+                <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
+                  <span>うち消費税（8%）</span><span>¥{tax8.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
+                  <span>うち消費税（10%）</span><span>¥{tax10.toLocaleString()}</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>税抜き合計</span>
+                <span className="text-base font-bold" style={{ color: 'var(--text)' }}>¥{pretotal.toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col gap-1 pl-1">
+                <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
+                  <span>消費税（8%）</span><span>¥{tax8.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
+                  <span>消費税（10%）</span><span>¥{tax10.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center border-t pt-2" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>合計（税込）</span>
+                <span className="text-lg font-bold" style={{ color: 'var(--text)' }}>¥{subtotal.toLocaleString()}</span>
+              </div>
+            </>
+          )}
           <div className="flex items-center gap-3">
             <label className="text-sm shrink-0" style={{ color: 'var(--text3)' }}>レシート合計</label>
             <div className="flex items-center gap-1 flex-1 rounded-xl border px-3 py-2"
