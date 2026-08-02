@@ -213,7 +213,7 @@ export default function DashboardPage() {
                 <button
                   key={menu.path}
                   onClick={() => router.push(menu.path)}
-                  className="rounded-2xl border px-1 py-3 flex flex-col items-center justify-center gap-1.5 active:opacity-70 transition-opacity h-20"
+                  className="rounded-2xl border px-1 py-2.5 flex flex-col items-center justify-center gap-1 active:opacity-70 transition-opacity h-16"
                   style={{
                     backgroundColor: (menu as any).accent ? 'var(--accent)' : 'var(--bg2)',
                     borderColor: (menu as any).accent ? 'var(--accent)' : 'var(--border)',
