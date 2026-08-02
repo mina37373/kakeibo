@@ -102,7 +102,6 @@ export default function DashboardPage() {
         { icon: '≡', label: '取引一覧', path: '/dashboard/transactions' },
         { icon: '💳', label: 'クレカ引き落とし', path: '/dashboard/credit-payment' },
         { icon: '↻', label: '定期支払い', path: '/dashboard/recurring' },
-        { icon: '📅', label: '引き落とし', path: '/dashboard/calendar' },
       ],
     },
     {
@@ -120,6 +119,7 @@ export default function DashboardPage() {
     {
       label: 'その他',
       items: [
+        { icon: '📅', label: '引き落とし', path: '/dashboard/calendar' },
         { icon: '↓', label: 'エクスポート', path: '/dashboard/export' },
         { icon: '⚙', label: '設定', path: '/dashboard/settings' },
       ],
