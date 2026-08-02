@@ -160,7 +160,7 @@ export default function LedgerPage() {
               {entries.length === 0 ? (
                 <p className="text-sm text-center py-6" style={{ color: 'var(--text3)' }}>この月の仕訳はありません</p>
               ) : entries.map(e => (
-                <div key={e.id} onClick={() => router.push(`/dashboard/transactions/${e.txnId}`)}
+                <div key={e.id} onClick={() => router.push(`/dashboard/transactions/${e.txnId}?from=ledger`)}
                   className="grid px-4 py-2.5 border-b last:border-b-0 items-center cursor-pointer active:opacity-70"
                   style={{ gridTemplateColumns: '3fr 2fr 2fr 2fr', borderColor: 'var(--border)' }}>
                   <div>

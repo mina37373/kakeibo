@@ -108,7 +108,7 @@ export default function BalanceSheetPage() {
           ) : details.length === 0 ? (
             <p className="text-xs text-center py-3" style={{ color: 'var(--text3)' }}>明細なし</p>
           ) : details.map((d, i) => (
-            <div key={i} onClick={() => router.push(`/dashboard/transactions/${d.txnId}`)}
+            <div key={i} onClick={() => router.push(`/dashboard/transactions/${d.txnId}?from=balance-sheet`)}
               className="flex justify-between items-center px-6 py-2 border-b cursor-pointer active:opacity-70"
               style={{ borderColor: 'var(--border)' }}>
               <div className="min-w-0 flex-1">

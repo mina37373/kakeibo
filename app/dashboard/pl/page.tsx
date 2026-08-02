@@ -158,7 +158,7 @@ export default function PLPage() {
                       </div>
                     ))}
                     <div className="px-6 pt-1">
-                      <button onClick={() => router.push(`/dashboard/transactions/${d.txnId}`)}
+                      <button onClick={() => router.push(`/dashboard/transactions/${d.txnId}?from=pl`)}
                         className="text-xs" style={{ color: 'var(--accent)' }}>
                         取引詳細 →
                       </button>

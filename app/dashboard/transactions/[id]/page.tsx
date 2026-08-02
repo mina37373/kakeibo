@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Page, Header } from '@/components/ui'
 
@@ -12,8 +12,18 @@ type Transaction = {
 }
 
 export default function TransactionDetailPage() {
+  return <Suspense><TransactionDetailContent /></Suspense>
+}
+
+function TransactionDetailContent() {
   const router = useRouter()
   const { id } = useParams()
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from')
+  const backPath = from === 'pl' ? '/dashboard/pl'
+    : from === 'ledger' ? '/dashboard/ledger'
+    : from === 'balance-sheet' ? '/dashboard/balance-sheet'
+    : '/dashboard/transactions'
   const [txn, setTxn] = useState<Transaction | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightbox, setLightbox] = useState(false)
@@ -104,7 +114,7 @@ export default function TransactionDetailPage() {
 
   return (
     <Page>
-      <Header title="取引詳細" backPath="/dashboard/transactions" right={
+      <Header title="取引詳細" backPath={backPath} right={
         (() => {
           const isReceipt = txn.journal_entries.some(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
           return isReceipt ? (
