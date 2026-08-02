@@ -21,7 +21,7 @@ export function Header({ title, backPath, right }: { title: string; backPath?: s
         <button onClick={() => router.push(backPath)} style={{ color: 'var(--text2)' }} className="text-xl">←</button>
       )}
       <h1 className="font-bold flex-1 min-w-0 truncate" style={{ color: 'var(--text)' }}>{title}</h1>
-      {right && <div className="shrink-0 overflow-hidden">{right}</div>}
+      {right && <div className="shrink-0">{right}</div>}
     </header>
   )
 }
