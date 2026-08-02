@@ -26,7 +26,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: 'https://kakeibo-q99m.vercel.app/login',
       })
-      if (error) setError('メール送信に失敗しました')
+      if (error) setError('メール送信に失敗しました: ' + error.message)
       else setResetSent(true)
     } else {
       const { error } = await supabase.auth.signUp({ email, password })
@@ -75,17 +75,19 @@ export default function LoginPage() {
                 required
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">パスワード</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600"
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            {mode !== 'reset' && (
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">パスワード</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 transition-colors placeholder:text-slate-600"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            )}
 
             {error && <p className="text-sm text-center px-2 py-2 rounded-lg bg-red-950 text-red-400">{error}</p>}
             {resetSent && <p className="text-sm text-center px-2 py-2 rounded-lg bg-green-950 text-green-400">リセットメールを送りました！メールをご確認ください。</p>}
