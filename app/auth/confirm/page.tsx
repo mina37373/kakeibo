@@ -13,9 +13,9 @@ export default function AuthConfirmPage() {
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) {
-          router.push('/login')
+          window.location.href = '/login'
         } else {
-          router.push('/dashboard')
+          window.location.href = '/dashboard'
         }
       })
     } else {
