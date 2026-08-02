@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { Page, Header } from '@/components/ui'
 
 type CategoryRow = { accountId: string; name: string; amount: number }
-type DetailEntry = { txnId: string; date: string; description: string; memo: string; amount: number }
+type DetailLine = { memo: string; amount: number }
+type DetailEntry = { txnId: string; date: string; description: string; total: number; lines: DetailLine[] }
 
 export default function PLPage() {
   const router = useRouter()
@@ -69,29 +70,40 @@ export default function PLPage() {
     setLoading(false)
   }
 
+  const [expandedTxn, setExpandedTxn] = useState<string | null>(null)
+
   const toggleDetail = async (accountId: string, type: 'income' | 'expense') => {
-    if (openId === accountId) { setOpenId(null); return }
+    if (openId === accountId) { setOpenId(null); setExpandedTxn(null); return }
     setOpenId(accountId)
     setDetails([])
     setDetailLoading(true)
+    setExpandedTxn(null)
     const amtField = type === 'income' ? 'credit_amount' : 'debit_amount'
     const { data } = await supabase
       .from('journal_entries')
-      .select('debit_amount, credit_amount, transactions!inner(id, date, description, memo)')
+      .select('debit_amount, credit_amount, memo, transactions!inner(id, date, description)')
       .eq('account_id', accountId)
       .gte('transactions.date', startDate)
       .lte('transactions.date', endDate)
       .order('transactions(date)', { ascending: false })
     if (data) {
-      setDetails(data
-        .filter((e: any) => (e[amtField] ?? 0) > 0)
-        .map((e: any) => ({
-          txnId: e.transactions?.id,
-          date: e.transactions?.date ?? '',
-          description: e.transactions?.description ?? '',
-          memo: e.transactions?.memo ?? '',
-          amount: e[amtField] ?? 0,
-        })))
+      // 同一取引（txnId）でグループ化
+      const grouped: Record<string, DetailEntry> = {}
+      data.filter((e: any) => (e[amtField] ?? 0) > 0).forEach((e: any) => {
+        const txnId = e.transactions?.id
+        if (!grouped[txnId]) {
+          grouped[txnId] = {
+            txnId,
+            date: e.transactions?.date ?? '',
+            description: e.transactions?.description ?? '',
+            total: 0,
+            lines: [],
+          }
+        }
+        grouped[txnId].total += e[amtField] ?? 0
+        grouped[txnId].lines.push({ memo: e.memo ?? '', amount: e[amtField] ?? 0 })
+      })
+      setDetails(Object.values(grouped))
     }
     setDetailLoading(false)
   }
@@ -119,16 +131,40 @@ export default function PLPage() {
             ) : details.length === 0 ? (
               <p className="text-xs text-center py-3" style={{ color: 'var(--text3)' }}>明細なし</p>
             ) : details.map((d, i) => (
-              <div key={i} onClick={() => router.push(`/dashboard/transactions/${d.txnId}`)}
-                className="flex justify-between items-center px-6 py-2 border-b cursor-pointer active:opacity-70"
-                style={{ borderColor: 'var(--border)' }}>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium truncate" style={{ color: 'var(--text)' }}>{d.description || '（内容なし）'}</p>
-                  <p className="text-xs" style={{ color: 'var(--text3)' }}>{d.date}{d.memo ? `・${d.memo}` : ''}</p>
+              <div key={i} className="border-b" style={{ borderColor: 'var(--border)' }}>
+                {/* グループ行：同日・同店・合計 */}
+                <div
+                  onClick={() => setExpandedTxn(expandedTxn === d.txnId ? null : d.txnId)}
+                  className="flex justify-between items-center px-6 py-2 cursor-pointer active:opacity-70"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: 'var(--text)' }}>{d.description || '（内容なし）'}</p>
+                    <p className="text-xs" style={{ color: 'var(--text3)' }}>{d.date}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                    <span className="text-xs font-medium" style={{ color: type === 'income' ? 'var(--accent)' : 'var(--text2)' }}>
+                      ¥{d.total.toLocaleString()}
+                    </span>
+                    {d.lines.length > 1 && <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{expandedTxn === d.txnId ? '▲' : '▼'}</span>}
+                  </div>
                 </div>
-                <span className="text-xs font-medium shrink-0 ml-2" style={{ color: type === 'income' ? 'var(--accent)' : 'var(--text2)' }}>
-                  ¥{d.amount.toLocaleString()}
-                </span>
+                {/* 展開：内容・各金額 */}
+                {expandedTxn === d.txnId && (
+                  <div className="pb-1" style={{ backgroundColor: 'var(--bg2)' }}>
+                    {d.lines.map((line, j) => (
+                      <div key={j} className="flex justify-between items-center px-8 py-1">
+                        <p className="text-xs" style={{ color: 'var(--text3)' }}>{line.memo || `明細${j + 1}`}</p>
+                        <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{line.amount.toLocaleString()}</p>
+                      </div>
+                    ))}
+                    <div className="px-6 pt-1">
+                      <button onClick={() => router.push(`/dashboard/transactions/${d.txnId}`)}
+                        className="text-xs" style={{ color: 'var(--accent)' }}>
+                        取引詳細 →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
