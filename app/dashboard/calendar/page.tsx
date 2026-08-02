@@ -40,7 +40,7 @@ export default function CalendarPage() {
   const fetchEvents = async () => {
     const allEvents: CalendarEvent[] = []
 
-    const { data: pms } = await supabase.from('payment_methods').select('id, name, kind, closing_day, payment_day, debit_pm_id')
+    const { data: pms } = await supabase.from('payment_methods').select('id, name, kind, closing_day, payment_day')
     const pmNameMap: Record<string, string> = {}
     const pmKindMap: Record<string, string> = {}
     for (const pm of pms ?? []) { pmNameMap[pm.id] = pm.name; pmKindMap[pm.id] = pm.kind }
