@@ -143,14 +143,32 @@ export default function ReceiptInputPage() {
   }
 
   const guessAccountId = async (memo: string): Promise<string> => {
-    const { data } = await supabase
+    if (!memo) return ''
+    // 同じmemoで過去に使った科目を探す（完全一致優先、部分一致も試みる）
+    const { data: exact } = await supabase
       .from('journal_entries')
       .select('account_id, accounts!inner(type)')
       .eq('accounts.type', 'expense')
-      .limit(20)
-    if (data && data.length > 0) {
+      .eq('memo', memo)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (exact && exact.length > 0) {
       const counts: Record<string, number> = {}
-      data.forEach((e: any) => { if (e.account_id) counts[e.account_id] = (counts[e.account_id] ?? 0) + 1 })
+      exact.forEach((e: any) => { if (e.account_id) counts[e.account_id] = (counts[e.account_id] ?? 0) + 1 })
+      return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? ''
+    }
+    // 部分一致で検索
+    const keyword = memo.slice(0, 6)
+    const { data: partial } = await supabase
+      .from('journal_entries')
+      .select('account_id, accounts!inner(type)')
+      .eq('accounts.type', 'expense')
+      .ilike('memo', `%${keyword}%`)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (partial && partial.length > 0) {
+      const counts: Record<string, number> = {}
+      partial.forEach((e: any) => { if (e.account_id) counts[e.account_id] = (counts[e.account_id] ?? 0) + 1 })
       return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? ''
     }
     return ''
@@ -319,7 +337,7 @@ export default function ReceiptInputPage() {
       const entries: any[] = []
       for (const line of validLines) {
         const amt = calcTaxIncluded(line)
-        entries.push({ transaction_id: txn.id, account_id: line.accountId, debit_amount: amt, credit_amount: 0 })
+        entries.push({ transaction_id: txn.id, account_id: line.accountId, debit_amount: amt, credit_amount: 0, memo: line.memo || null })
         entries.push({ transaction_id: txn.id, account_id: pm.account_id, debit_amount: 0, credit_amount: amt })
       }
       await supabase.from('journal_entries').insert(entries)
