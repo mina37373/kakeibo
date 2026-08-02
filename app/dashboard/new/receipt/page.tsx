@@ -53,7 +53,7 @@ function ReceiptInputContent() {
   const loadEditData = async (txnId: string) => {
     const { data } = await supabase
       .from('transactions')
-      .select('*, journal_entries(id, account_id, debit_amount, credit_amount, memo, accounts(type))')
+      .select('*, journal_entries(id, account_id, debit_amount, credit_amount, memo, tax_rate, tax_included, accounts(type))')
       .eq('id', txnId).single()
     if (!data) return
     setDate(data.date)
@@ -61,21 +61,28 @@ function ReceiptInputContent() {
     const expEntries = data.journal_entries.filter((e: any) => e.accounts?.type === 'expense' && e.debit_amount > 0)
     const pmEntry = data.journal_entries.find((e: any) => e.accounts?.type === 'asset' && e.credit_amount > 0)
     if (pmEntry) {
-      // payment_methodsからaccount_idが一致するものを探す
       const { data: pms } = await supabase.from('payment_methods').select('id, account_id')
       const pm = (pms ?? []).find((p: any) => p.account_id === pmEntry.account_id)
       if (pm) setPaymentMethodId(pm.id)
     }
     if (expEntries.length > 0) {
-      setDefaultTaxIncluded(true)
-      setLines(expEntries.map((e: any, i: number) => ({
-        id: i + 1,
-        accountId: e.account_id,
-        amount: String(e.debit_amount),
-        taxRate: 10 as TaxRate,
-        taxIncluded: true,
-        memo: e.memo ?? '',
-      })))
+      const firstTaxIncluded = expEntries[0].tax_included ?? true
+      setDefaultTaxIncluded(firstTaxIncluded)
+      setLines(expEntries.map((e: any, i: number) => {
+        const taxIncluded: boolean = e.tax_included ?? true
+        const taxRate: TaxRate = (e.tax_rate ?? 10) as TaxRate
+        // 税抜き入力だった場合、保存されているのは税込み金額なので逆算して税抜き金額を復元
+        const storedAmt = e.debit_amount
+        const amount = taxIncluded ? storedAmt : Math.floor(storedAmt / (1 + taxRate / 100))
+        return {
+          id: i + 1,
+          accountId: e.account_id,
+          amount: String(amount),
+          taxRate,
+          taxIncluded,
+          memo: e.memo ?? '',
+        }
+      }))
     }
   }
 
@@ -381,8 +388,8 @@ function ReceiptInputContent() {
     const entries: any[] = []
     for (const line of validLines) {
       const amt = calcTaxIncluded(line)
-      entries.push({ transaction_id: txnId, account_id: line.accountId, debit_amount: amt, credit_amount: 0, memo: line.memo || null })
-      entries.push({ transaction_id: txnId, account_id: pm.account_id, debit_amount: 0, credit_amount: amt })
+      entries.push({ transaction_id: txnId, account_id: line.accountId, debit_amount: amt, credit_amount: 0, memo: line.memo || null, tax_rate: line.taxRate, tax_included: line.taxIncluded })
+      entries.push({ transaction_id: txnId, account_id: pm.account_id, debit_amount: 0, credit_amount: amt, tax_rate: 0, tax_included: true })
     }
     await supabase.from('journal_entries').insert(entries)
 
