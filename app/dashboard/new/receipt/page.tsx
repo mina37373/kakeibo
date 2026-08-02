@@ -246,7 +246,15 @@ export default function ReceiptInputPage() {
     if (line.taxIncluded || line.taxRate === 0) return base
     return Math.floor(base * (1 + line.taxRate / 100))
   }
-  const calcTax = (line: Line) => calcTaxIncluded(line) - (Number(line.amount) || 0)
+  const calcTax = (line: Line) => {
+    const base = Number(line.amount) || 0
+    if (line.taxRate === 0) return 0
+    if (line.taxIncluded) {
+      // 税込価格から消費税を逆算: 税額 = 税込 - floor(税込 / (1 + 税率))
+      return base - Math.floor(base / (1 + line.taxRate / 100))
+    }
+    return calcTaxIncluded(line) - base
+  }
 
   const subtotal = lines.reduce((s, l) => s + calcTaxIncluded(l), 0)
   const tax8 = lines.filter(l => l.taxRate === 8).reduce((s, l) => s + calcTax(l), 0)
