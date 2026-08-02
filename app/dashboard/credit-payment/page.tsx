@@ -232,10 +232,17 @@ export default function CreditPaymentPage() {
         {cards.map(card => {
           const c = card.closing_day && card.payment_day
             ? getBillingCycle(card.closing_day, card.payment_day) : null
+          const ccBankMap: Record<string, string> = typeof window !== 'undefined'
+            ? JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}') : {}
+          const debitBankName = ccBankMap[card.id]
+            ? (bankAccounts.find(b => b.id === ccBankMap[card.id])?.name ?? null) : null
           return (
             <div key={card.id} className="rounded-2xl border p-4" style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between mb-3">
-                <p className="font-medium text-sm" style={{ color: 'var(--text)' }}>💳 {card.name}</p>
+                <div>
+                  <p className="font-medium text-sm" style={{ color: 'var(--text)' }}>💳 {card.name}</p>
+                  {debitBankName && <p className="text-xs" style={{ color: 'var(--text3)' }}>🏦 {debitBankName}</p>}
+                </div>
                 <span className="text-lg font-bold" style={{ color: 'var(--text)' }}>
                   ¥{(balances[card.id] ?? 0).toLocaleString()}
                 </span>
