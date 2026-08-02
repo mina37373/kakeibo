@@ -154,7 +154,6 @@ export default function TransactionsPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{txn.description || '（内容なし）'}</p>
-                            <p className="text-xs" style={{ color: 'var(--text3)' }}>{label}</p>
                           </div>
                           <p className="font-semibold text-sm shrink-0" style={{ color: type === 'income' ? 'var(--accent)' : 'var(--text2)' }}>
                             {type === 'income' ? '+' : '-'}¥{amount.toLocaleString()}
