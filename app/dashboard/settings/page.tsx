@@ -51,7 +51,11 @@ export default function SettingsPage() {
   const [newClosingDay, setNewClosingDay] = useState('25')
   const [newPaymentDay, setNewPaymentDay] = useState('10')
   const [newDebitPmId, setNewDebitPmId] = useState('')
-  const [tab, setTab] = useState<'accounts' | 'payments' | 'theme' | 'opening'>('accounts')
+  const [tab, setTab] = useState<'accounts' | 'payments' | 'theme' | 'opening' | 'alert'>('accounts')
+  const [recurringAlertDays, setRecurringAlertDays] = useState(() => Number(localStorage.getItem('alert_recurring_days') ?? 7))
+  const [recurringUrgentDays, setRecurringUrgentDays] = useState(() => Number(localStorage.getItem('alert_recurring_urgent') ?? 1))
+  const [creditAlertDays, setCreditAlertDays] = useState(() => Number(localStorage.getItem('alert_credit_days') ?? 7))
+  const [creditUrgentDays, setCreditUrgentDays] = useState(() => Number(localStorage.getItem('alert_credit_urgent') ?? 1))
   const { themeId, setThemeId } = useTheme()
   const { householdId, inviteCode, members, joinHousehold } = useHousehold()
   const [joinCode, setJoinCode] = useState('')
@@ -246,6 +250,7 @@ export default function SettingsPage() {
     { id: 'payments', label: '資産科目' },
     { id: 'opening', label: '繰越残高' },
     { id: 'theme', label: 'テーマ' },
+    { id: 'alert', label: 'アラート' },
   ] as const
 
   return (
@@ -571,6 +576,82 @@ export default function SettingsPage() {
             ))}
           </div>
         )}
+        {tab === 'alert' && (
+          <div className="flex flex-col gap-4">
+            {/* 定期支払いアラート */}
+            <div className="rounded-2xl border p-4 flex flex-col gap-4" style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
+              <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>🏦 銀行引き落とし（定期支払い）</p>
+              <div>
+                <label className="block text-xs mb-2" style={{ color: 'var(--text3)' }}>何日前から表示する？</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[3, 5, 7, 10, 14].map(d => (
+                    <button key={d} type="button"
+                      onClick={() => { setRecurringAlertDays(d); localStorage.setItem('alert_recurring_days', String(d)) }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium border"
+                      style={{
+                        backgroundColor: recurringAlertDays === d ? 'var(--accent)' : 'var(--bg3)',
+                        borderColor: recurringAlertDays === d ? 'var(--accent)' : 'var(--border)',
+                        color: recurringAlertDays === d ? '#fff' : 'var(--text)',
+                      }}>{d}日前</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs mb-2" style={{ color: 'var(--text3)' }}>何日前から強調（黄色）表示？</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[0, 1, 2, 3].map(d => (
+                    <button key={d} type="button"
+                      onClick={() => { setRecurringUrgentDays(d); localStorage.setItem('alert_recurring_urgent', String(d)) }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium border"
+                      style={{
+                        backgroundColor: recurringUrgentDays === d ? 'var(--accent)' : 'var(--bg3)',
+                        borderColor: recurringUrgentDays === d ? 'var(--accent)' : 'var(--border)',
+                        color: recurringUrgentDays === d ? '#fff' : 'var(--text)',
+                      }}>{d === 0 ? '当日のみ' : `${d}日前から`}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* クレカアラート */}
+            <div className="rounded-2xl border p-4 flex flex-col gap-4" style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
+              <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>💳 クレジットカード引き落とし</p>
+              <div>
+                <label className="block text-xs mb-2" style={{ color: 'var(--text3)' }}>何日前から表示する？</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[3, 5, 7, 10, 14].map(d => (
+                    <button key={d} type="button"
+                      onClick={() => { setCreditAlertDays(d); localStorage.setItem('alert_credit_days', String(d)) }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium border"
+                      style={{
+                        backgroundColor: creditAlertDays === d ? 'var(--accent)' : 'var(--bg3)',
+                        borderColor: creditAlertDays === d ? 'var(--accent)' : 'var(--border)',
+                        color: creditAlertDays === d ? '#fff' : 'var(--text)',
+                      }}>{d}日前</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs mb-2" style={{ color: 'var(--text3)' }}>何日前から強調（黄色）表示？</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[0, 1, 2, 3].map(d => (
+                    <button key={d} type="button"
+                      onClick={() => { setCreditUrgentDays(d); localStorage.setItem('alert_credit_urgent', String(d)) }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium border"
+                      style={{
+                        backgroundColor: creditUrgentDays === d ? 'var(--accent)' : 'var(--bg3)',
+                        borderColor: creditUrgentDays === d ? 'var(--accent)' : 'var(--border)',
+                        color: creditUrgentDays === d ? '#fff' : 'var(--text)',
+                      }}>{d === 0 ? '当日のみ' : `${d}日前から`}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-center" style={{ color: 'var(--text3)' }}>設定はこの端末に保存されます</p>
+          </div>
+        )}
+
       </main>
     </Page>
   )

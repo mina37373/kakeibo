@@ -25,6 +25,7 @@ export default function DashboardPage() {
 
   const fetchRecurringAlerts = async () => {
     const todayDate = new Date().getDate()
+    const alertDays = Number(localStorage.getItem('alert_recurring_days') ?? 7)
     const { data: pms } = await supabase.from('payment_methods').select('id, kind')
     const bankIds = new Set((pms ?? []).filter((p: any) => p.kind === 'bank').map((p: any) => p.id))
     const { data } = await supabase.from('recurring_transactions')
@@ -32,11 +33,12 @@ export default function DashboardPage() {
     if (data) {
       const alerts = data
         .filter((r: any) => bankIds.has(r.payment_method_id))
-        .map((r: any) => {
-          const daysUntil = r.day_of_month >= todayDate ? r.day_of_month - todayDate : (new Date(new Date().getFullYear(), new Date().getMonth() + 1, r.day_of_month).getDate() + (31 - todayDate))
-          return { ...r, daysUntil: r.day_of_month >= todayDate ? r.day_of_month - todayDate : 31 - todayDate + r.day_of_month, kind: 'recurring' as const }
-        })
-        .filter((r: any) => r.daysUntil <= 7)
+        .map((r: any) => ({
+          ...r,
+          daysUntil: r.day_of_month >= todayDate ? r.day_of_month - todayDate : 31 - todayDate + r.day_of_month,
+          kind: 'recurring' as const,
+        }))
+        .filter((r: any) => r.daysUntil <= alertDays)
         .sort((a: any, b: any) => a.daysUntil - b.daysUntil)
       setRecurringAlerts(alerts)
     }
@@ -45,12 +47,13 @@ export default function DashboardPage() {
   const fetchCreditAlerts = async () => {
     const today = new Date()
     const todayDate = today.getDate()
+    const alertDays = Number(localStorage.getItem('alert_credit_days') ?? 7)
     const { data: pms } = await supabase.from('payment_methods').select('id, name, kind, closing_day, payment_day')
     const cards = (pms ?? []).filter((p: any) => p.kind === 'credit_card' && p.closing_day && p.payment_day)
     const alerts: CreditAlert[] = []
     for (const card of cards) {
       const daysUntil = card.payment_day >= todayDate ? card.payment_day - todayDate : 31 - todayDate + card.payment_day
-      if (daysUntil > 7) continue
+      if (daysUntil > alertDays) continue
       // 前回締め日〜今回締め日の利用額を集計
       const prevClosing = new Date(today.getFullYear(), today.getMonth() - 1, card.closing_day + 1)
       const thisClosing = new Date(today.getFullYear(), today.getMonth(), card.closing_day)
@@ -139,7 +142,8 @@ export default function DashboardPage() {
       {(recurringAlerts.length > 0 || creditAlerts.length > 0) && (
         <div className="px-5 pb-2 flex flex-col gap-2">
           {recurringAlerts.map(r => {
-            const urgent = r.daysUntil <= 1
+            const urgentDays = Number(localStorage.getItem('alert_recurring_urgent') ?? 1)
+            const urgent = r.daysUntil <= urgentDays
             const label = r.daysUntil === 0 ? '今日が引き落とし日' : r.daysUntil === 1 ? '明日が引き落とし日（残高確認！）' : `${r.daysUntil}日後に引き落とし`
             return (
               <button key={r.id} onClick={() => router.push('/dashboard/recurring')}
@@ -157,7 +161,8 @@ export default function DashboardPage() {
             )
           })}
           {creditAlerts.map(c => {
-            const urgent = c.daysUntil <= 1
+            const urgentDays = Number(localStorage.getItem('alert_credit_urgent') ?? 1)
+            const urgent = c.daysUntil <= urgentDays
             const label = c.daysUntil === 0 ? '今日がクレカ引き落とし日' : c.daysUntil === 1 ? '明日がクレカ引き落とし日（残高確認！）' : `${c.daysUntil}日後にクレカ引き落とし`
             return (
               <button key={c.id} onClick={() => router.push('/dashboard/credit-payment')}
