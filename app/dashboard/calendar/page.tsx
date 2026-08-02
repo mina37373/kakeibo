@@ -42,13 +42,17 @@ export default function CalendarPage() {
 
     const { data: pms } = await supabase.from('payment_methods').select('id, name, kind, closing_day, payment_day, debit_pm_id')
     const pmNameMap: Record<string, string> = {}
-    for (const pm of pms ?? []) pmNameMap[pm.id] = pm.name
+    const pmKindMap: Record<string, string> = {}
+    for (const pm of pms ?? []) { pmNameMap[pm.id] = pm.name; pmKindMap[pm.id] = pm.kind }
 
-    // 定期支払い（全件）
+    const bankIds = new Set(Object.entries(pmKindMap).filter(([, k]) => k === 'bank').map(([id]) => id))
+
+    // 定期支払い（銀行のみ）
     const { data: recs } = await supabase.from('recurring_transactions')
       .select('id, name, amount, day_of_month, payment_method_id').eq('is_active', true)
     for (const r of recs ?? []) {
-      const debitAccount = r.payment_method_id ? pmNameMap[r.payment_method_id] : undefined
+      if (!bankIds.has(r.payment_method_id)) continue
+      const debitAccount = pmNameMap[r.payment_method_id]
       allEvents.push({ day: r.day_of_month, name: r.name, amount: r.amount, kind: 'bank', debitAccount })
     }
 
