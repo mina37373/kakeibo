@@ -100,7 +100,7 @@ export default function DashboardPage() {
       items: [
         { icon: '＋', label: '収支を入力', path: '/dashboard/new', accent: true },
         { icon: '≡', label: '取引一覧', path: '/dashboard/transactions' },
-        { icon: '💳', label: 'クレカ引き落とし', path: '/dashboard/credit-payment' },
+        { icon: '💳', label: 'クレカ', path: '/dashboard/credit-payment' },
         { icon: '↻', label: '定期支払い', path: '/dashboard/recurring' },
         { icon: '📅', label: 'カレンダー', path: '/dashboard/calendar' },
       ],
@@ -108,7 +108,7 @@ export default function DashboardPage() {
     {
       label: '分析・レポート',
       items: [
-        { icon: '◎', label: '集計・グラフ', path: '/dashboard/analytics' },
+        { icon: '◎', label: '集計グラフ', path: '/dashboard/analytics' },
         { icon: '◈', label: '予算管理', path: '/dashboard/budget' },
         { icon: '📉', label: '固定変動費', path: '/dashboard/utilities' },
         { icon: '📈', label: '投資管理', path: '/dashboard/investments' },
