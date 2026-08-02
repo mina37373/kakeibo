@@ -560,7 +560,12 @@ function ReceiptInputContent() {
                   {/* 1行目: 科目・金額・削除 */}
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs w-4 shrink-0 text-center" style={{ color: 'var(--text3)' }}>{i + 1}</span>
-                    <select value={line.accountId} onChange={e => updateLine(line.id, 'accountId', e.target.value)}
+                    <select value={line.accountId} onChange={e => {
+                      const acc = accounts.find(a => a.id === e.target.value)
+                      const updates: Partial<Line> = { accountId: e.target.value }
+                      if (acc?.name === '食費') updates.taxRate = 8
+                      setLines(prev => prev.map(l => l.id === line.id ? { ...l, ...updates } : l))
+                    }}
                       className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none min-w-0"
                       style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: line.accountId ? 'var(--text)' : 'var(--text3)' }}>
                       <option value="">科目</option>
