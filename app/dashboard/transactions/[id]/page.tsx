@@ -23,6 +23,7 @@ export default function TransactionDetailPage() {
   const [editMemo, setEditMemo] = useState('')
   const [editAmount, setEditAmount] = useState('')
   const [saving, setSaving] = useState(false)
+  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -213,31 +214,81 @@ export default function TransactionDetailPage() {
                   <div className="px-3 py-1.5 text-xs font-medium" style={{ color: 'var(--text3)' }}>借方</div>
                   <div className="px-3 py-1.5 text-xs font-medium border-l" style={{ color: 'var(--text3)', borderColor: 'var(--border)' }}>貸方</div>
                 </div>
-                {/* 借方・貸方を左右に並べる */}
                 {(() => {
-                  const debits = txn.journal_entries.filter(e => e.debit_amount > 0)
-                  const credits = txn.journal_entries.filter(e => e.credit_amount > 0)
-                  const rows = Math.max(debits.length, credits.length)
-                  const typeLabel = (t: string) => t === 'expense' ? '費用' : t === 'income' ? '収益' : t === 'asset' ? '資産' : '負債'
+                  // 借方：科目ごとにグループ化
+                  const debitEntries = txn.journal_entries.filter(e => e.debit_amount > 0)
+                  const creditEntries = txn.journal_entries.filter(e => e.credit_amount > 0)
+
+                  // 科目名でグループ化
+                  const debitGroups: { name: string; total: number; items: Entry[] }[] = []
+                  for (const e of debitEntries) {
+                    const name = e.accounts?.name ?? ''
+                    const g = debitGroups.find(g => g.name === name)
+                    if (g) { g.total += e.debit_amount; g.items.push(e) }
+                    else debitGroups.push({ name, total: e.debit_amount, items: [e] })
+                  }
+                  const creditGroups: { name: string; total: number; items: Entry[] }[] = []
+                  for (const e of creditEntries) {
+                    const name = e.accounts?.name ?? ''
+                    const g = creditGroups.find(g => g.name === name)
+                    if (g) { g.total += e.credit_amount; g.items.push(e) }
+                    else creditGroups.push({ name, total: e.credit_amount, items: [e] })
+                  }
+
+                  const rows = Math.max(debitGroups.length, creditGroups.length)
                   return Array.from({ length: rows }).map((_, i) => {
-                    const d = debits[i]
-                    const c = credits[i]
+                    const dg = debitGroups[i]
+                    const cg = creditGroups[i]
+                    const dKey = `d-${dg?.name}`
+                    const cKey = `c-${cg?.name}`
                     return (
-                      <div key={i} className="grid grid-cols-2 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
-                        <div className="px-3 py-2.5">
-                          {d ? <>
-                            <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{d.accounts?.name}</p>
-                            <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{d.debit_amount.toLocaleString()}</p>
-                            {d.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{d.memo}</p>}
-                          </> : null}
+                      <div key={i} className="border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
+                        <div className="grid grid-cols-2">
+                          {/* 借方グループ */}
+                          <div className="px-3 py-2.5">
+                            {dg ? (
+                              <button className="w-full text-left" onClick={() => {
+                                if (dg.items.length <= 1) return
+                                setExpandedAccounts(prev => {
+                                  const s = new Set(prev)
+                                  s.has(dKey) ? s.delete(dKey) : s.add(dKey)
+                                  return s
+                                })
+                              }}>
+                                <div className="flex items-center justify-between gap-1">
+                                  <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{dg.name}</p>
+                                  <div className="flex items-center gap-1">
+                                    <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{dg.total.toLocaleString()}</p>
+                                    {dg.items.length > 1 && <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{expandedAccounts.has(dKey) ? '▲' : '▼'}</span>}
+                                  </div>
+                                </div>
+                                {dg.items.length === 1 && dg.items[0].memo && (
+                                  <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{dg.items[0].memo}</p>
+                                )}
+                              </button>
+                            ) : null}
+                          </div>
+                          {/* 貸方グループ */}
+                          <div className="px-3 py-2.5 border-l" style={{ borderColor: 'var(--border)' }}>
+                            {cg ? (
+                              <div className="flex items-center justify-between gap-1">
+                                <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{cg.name}</p>
+                                <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{cg.total.toLocaleString()}</p>
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
-                        <div className="px-3 py-2.5 border-l" style={{ borderColor: 'var(--border)' }}>
-                          {c ? <>
-                            <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{c.accounts?.name}</p>
-                            <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{c.credit_amount.toLocaleString()}</p>
-                            {c.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{c.memo}</p>}
-                          </> : null}
-                        </div>
+                        {/* 借方展開: 内容一覧 */}
+                        {dg && dg.items.length > 1 && expandedAccounts.has(dKey) && (
+                          <div className="border-t mx-3 pt-1 pb-2" style={{ borderColor: 'var(--border)' }}>
+                            {dg.items.map((item, j) => (
+                              <div key={j} className="flex justify-between items-center py-1">
+                                <p className="text-xs" style={{ color: 'var(--text3)' }}>{item.memo || `明細${j + 1}`}</p>
+                                <p className="text-xs" style={{ color: 'var(--text3)' }}>¥{item.debit_amount.toLocaleString()}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )
                   })
