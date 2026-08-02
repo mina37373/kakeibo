@@ -7,7 +7,7 @@ import { Page, Header } from '@/components/ui'
 
 type Transaction = {
   id: string; date: string; description: string; memo: string; created_at: string
-  journal_entries: { debit_amount: number; credit_amount: number; accounts: { name: string; type: string } }[]
+  journal_entries: { debit_amount: number; credit_amount: number; memo?: string | null; accounts: { name: string; type: string } }[]
 }
 
 export default function TransactionsPage() {
@@ -36,7 +36,7 @@ export default function TransactionsPage() {
     setLoading(true)
     const { data } = await supabase
       .from('transactions')
-      .select(`*, journal_entries(debit_amount, credit_amount, accounts(name, type))`)
+      .select(`*, journal_entries(debit_amount, credit_amount, memo, accounts(name, type))`)
       .gte('date', `${month}-01`).lte('date', `${month}-31`)
       .order('date', { ascending: false }).order('created_at', { ascending: false })
     if (data) setTransactions(data)
@@ -48,7 +48,7 @@ export default function TransactionsPage() {
     setLoading(true)
     const { data } = await supabase
       .from('transactions')
-      .select(`*, journal_entries(debit_amount, credit_amount, accounts(name, type))`)
+      .select(`*, journal_entries(debit_amount, credit_amount, memo, accounts(name, type))`)
       .or(`description.ilike.%${q}%,memo.ilike.%${q}%`)
       .order('date', { ascending: false })
       .limit(100)
@@ -144,7 +144,11 @@ export default function TransactionsPage() {
                       return (
                         <div
                           key={txn.id}
-                          onClick={() => router.push(`/dashboard/transactions/${txn.id}`)}
+                          onClick={() => {
+                            const expEntries = txn.journal_entries.filter(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
+                            const isReceipt = expEntries.length > 1 || expEntries.some(e => e.memo)
+                            router.push(isReceipt ? `/dashboard/new/receipt?edit=${txn.id}` : `/dashboard/transactions/${txn.id}`)
+                          }}
                           className="rounded-xl border px-4 py-3 flex items-center gap-3 cursor-pointer transition-opacity active:opacity-70"
                           style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}
                         >
