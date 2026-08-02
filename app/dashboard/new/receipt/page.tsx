@@ -506,55 +506,51 @@ export default function ReceiptInputPage() {
                         style={{ borderColor: 'var(--border)', color: 'var(--text3)' }}>戻す</button>
                     </div>
                   )}
-                <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs w-5 shrink-0 text-center" style={{ color: 'var(--text3)' }}>{i + 1}</span>
-                    <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                      <select value={line.accountId} onChange={e => updateLine(line.id, 'accountId', e.target.value)}
-                        className="w-full rounded-lg border px-2 py-1.5 text-sm outline-none"
-                        style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: line.accountId ? 'var(--text)' : 'var(--text3)' }}>
-                        <option value="">科目を選択</option>
-                        {expenseAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                      </select>
-                      <div className="flex items-center gap-1 rounded-lg border px-2 py-1.5 w-full"
-                        style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)' }}>
-                        <span className="text-xs shrink-0" style={{ color: 'var(--text3)' }}>¥</span>
-                        <input type="text" inputMode="numeric"
-                          value={line.amount ? Number(line.amount).toLocaleString() : ''}
-                          onChange={e => updateLine(line.id, 'amount', e.target.value.replace(/[^0-9]/g, ''))}
-                          placeholder="0"
-                          className="flex-1 bg-transparent outline-none text-sm text-right placeholder:opacity-40 min-w-0"
-                          style={{ color: 'var(--text)' }} />
-                      </div>
+                <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
+                  {/* 1行目: 科目・金額・削除 */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs w-4 shrink-0 text-center" style={{ color: 'var(--text3)' }}>{i + 1}</span>
+                    <select value={line.accountId} onChange={e => updateLine(line.id, 'accountId', e.target.value)}
+                      className="flex-1 rounded-lg border px-2 py-1.5 text-xs outline-none min-w-0"
+                      style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: line.accountId ? 'var(--text)' : 'var(--text3)' }}>
+                      <option value="">科目</option>
+                      {expenseAccounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                    <div className="flex items-center gap-0.5 rounded-lg border px-2 py-1.5 w-28 shrink-0"
+                      style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)' }}>
+                      <span className="text-xs shrink-0" style={{ color: 'var(--text3)' }}>¥</span>
+                      <input type="text" inputMode="numeric"
+                        value={line.amount ? Number(line.amount).toLocaleString() : ''}
+                        onChange={e => updateLine(line.id, 'amount', e.target.value.replace(/[^0-9]/g, ''))}
+                        placeholder="0"
+                        className="flex-1 bg-transparent outline-none text-xs text-right placeholder:opacity-40 min-w-0"
+                        style={{ color: 'var(--text)' }} />
                     </div>
                     {lines.length > 1 && (
                       <button type="button" onClick={() => removeLine(line.id)}
-                        className="text-xs shrink-0 w-6 h-6 flex items-center justify-center rounded-full self-start mt-1"
+                        className="text-xs shrink-0 w-5 h-5 flex items-center justify-center rounded-full"
                         style={{ color: 'var(--text3)', backgroundColor: 'var(--bg3)' }}>✕</button>
                     )}
                   </div>
-                  <input type="text" value={line.memo}
-                    onChange={e => updateLine(line.id, 'memo', e.target.value)}
-                    placeholder="内容（例: お茶、洗剤）"
-                    className="mt-1.5 rounded-lg border px-2 py-1.5 text-xs outline-none placeholder:opacity-40"
-                    style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)', width: 'calc(100% - 1.75rem)', marginLeft: '1.75rem', boxSizing: 'border-box' }} />
-                  <div className="flex items-center gap-2 mt-1.5 pl-7">
+                  {/* 2行目: 内容・税率・税額 */}
+                  <div className="flex items-center gap-1.5 mt-1 pl-5">
+                    <input type="text" value={line.memo}
+                      onChange={e => updateLine(line.id, 'memo', e.target.value)}
+                      placeholder="内容"
+                      className="flex-1 rounded-lg border px-2 py-1 text-xs outline-none placeholder:opacity-40 min-w-0"
+                      style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }} />
                     {([0, 8, 10] as TaxRate[]).map(r => (
                       <button key={r} type="button" onClick={() => updateLine(line.id, 'taxRate', r)}
-                        className="text-xs px-2 py-0.5 rounded-lg border"
+                        className="text-xs px-1.5 py-0.5 rounded-lg border shrink-0"
                         style={{
                           backgroundColor: line.taxRate === r ? 'var(--accent)' : 'var(--bg3)',
                           borderColor: line.taxRate === r ? 'var(--accent)' : 'var(--border)',
                           color: line.taxRate === r ? '#fff' : 'var(--text3)',
-                        }}>{r === 0 ? '非課税' : `${r}%`}</button>
+                        }}>{r === 0 ? '非課' : `${r}%`}</button>
                     ))}
                     {line.taxRate > 0 && line.amount && (
-                      <span className="text-xs ml-auto" style={{ color: 'var(--text3)' }}>
-                        {line.taxIncluded ? (
-                          <>税抜¥{(totalAmt - taxAmt).toLocaleString()} 税¥{taxAmt.toLocaleString()}</>
-                        ) : (
-                          <>税¥{taxAmt.toLocaleString()} → 税込¥{totalAmt.toLocaleString()}</>
-                        )}
+                      <span className="text-[10px] shrink-0" style={{ color: 'var(--text3)' }}>
+                        {line.taxIncluded ? `税¥${taxAmt.toLocaleString()}` : `→¥${totalAmt.toLocaleString()}`}
                       </span>
                     )}
                   </div>
