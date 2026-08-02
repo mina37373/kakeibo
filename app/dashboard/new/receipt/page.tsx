@@ -534,7 +534,7 @@ export default function ReceiptInputPage() {
                         {line.taxIncluded ? (
                           <>税抜¥{(totalAmt - taxAmt).toLocaleString()} <span>税¥{taxAmt.toLocaleString()}</span></>
                         ) : (
-                          <>税¥{taxAmt.toLocaleString()} → <span style={{ color: 'var(--text)' }}>¥{totalAmt.toLocaleString()}</span></>
+                          <>税¥{taxAmt.toLocaleString()} → <span style={{ color: 'var(--text)' }}>税込¥{totalAmt.toLocaleString()}</span></>
                         )}
                       </span>
                     )}
