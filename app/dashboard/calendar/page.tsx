@@ -10,6 +10,7 @@ type CalendarEvent = {
   name: string
   amount: number
   kind: 'bank' | 'credit'
+  debitAccount?: string
 }
 
 export default function CalendarPage() {
@@ -42,6 +43,10 @@ export default function CalendarPage() {
       }
     }
 
+    // 口座名マップ
+    const pmNameMap: Record<string, string> = {}
+    for (const pm of pms ?? []) pmNameMap[pm.id] = pm.name
+
     // クレカ引き落とし
     for (const pm of pms ?? []) {
       if (pm.kind === 'credit_card' && pm.payment_day) {
@@ -57,7 +62,8 @@ export default function CalendarPage() {
           .gte('transactions.date', from)
           .lte('transactions.date', to)
         const estimated = (entries ?? []).reduce((s: number, e: any) => s + (e.credit_amount ?? 0), 0)
-        allEvents.push({ day: pm.payment_day, name: pm.name, amount: estimated, kind: 'credit' })
+        const debitAccount = pm.debit_pm_id ? pmNameMap[pm.debit_pm_id] : undefined
+        allEvents.push({ day: pm.payment_day, name: pm.name, amount: estimated, kind: 'credit', debitAccount })
       }
     }
 
@@ -165,6 +171,7 @@ export default function CalendarPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs" style={{ color: 'var(--text3)' }}>{e.kind === 'bank' ? '銀行引き落とし' : 'クレカ引き落とし'}</p>
                       <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{e.name}</p>
+                      {e.debitAccount && <p className="text-xs truncate" style={{ color: 'var(--text3)' }}>口座: {e.debitAccount}</p>}
                     </div>
                     <p className="text-sm font-bold shrink-0" style={{ color: 'var(--text)' }}>
                       {e.amount > 0 ? `¥${e.amount.toLocaleString()}` : '金額変動'}
