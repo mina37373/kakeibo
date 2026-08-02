@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { Page, Header } from '@/components/ui'
 
 type AccountBalance = { id: string; name: string; type: string; balance: number }
-type DetailEntry = { txnId: string; date: string; description: string; memo: string; debit: number; credit: number }
+type DetailLine = { memo: string; amount: number; sign: '+' | '-' }
+type DetailEntry = { txnId: string; date: string; description: string; total: number; sign: '+' | '-'; lines: DetailLine[] }
 
 export default function BalanceSheetPage() {
   const router = useRouter()
@@ -17,8 +18,10 @@ export default function BalanceSheetPage() {
   const [startDate, setStartDate] = useState('2000-01-01')
   const [endDate, setEndDate] = useState(todayStr)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [openType, setOpenType] = useState<'asset' | 'liability'>('asset')
   const [details, setDetails] = useState<DetailEntry[]>([])
   const [detailLoading, setDetailLoading] = useState(false)
+  const [expandedTxn, setExpandedTxn] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -49,7 +52,6 @@ export default function BalanceSheetPage() {
         .map((a: any) => {
           const d = debitMap[a.id] ?? 0
           const c = creditMap[a.id] ?? 0
-          // 資産: 借方増・貸方減、負債: 貸方増・借方減
           const balance = a.type === 'asset' ? d - c : c - d
           return { id: a.id, name: a.name, type: a.type, balance }
         }))
@@ -57,27 +59,46 @@ export default function BalanceSheetPage() {
     setLoading(false)
   }
 
-  const toggleDetail = async (accountId: string) => {
-    if (openId === accountId) { setOpenId(null); return }
+  const toggleDetail = async (accountId: string, accountType: 'asset' | 'liability') => {
+    if (openId === accountId) { setOpenId(null); setExpandedTxn(null); return }
     setOpenId(accountId)
+    setOpenType(accountType)
     setDetails([])
     setDetailLoading(true)
+    setExpandedTxn(null)
     const { data } = await supabase
       .from('journal_entries')
-      .select('debit_amount, credit_amount, transactions!inner(id, date, description, memo)')
+      .select('debit_amount, credit_amount, memo, transactions!inner(id, date, description, memo)')
       .eq('account_id', accountId)
+      .gte('transactions.date', startDate)
+      .lte('transactions.date', endDate)
       .order('transactions(date)', { ascending: false })
     if (data) {
-      setDetails(data
-        .filter((e: any) => (e.debit_amount ?? 0) > 0 || (e.credit_amount ?? 0) > 0)
-        .map((e: any) => ({
-          txnId: e.transactions?.id,
-          date: e.transactions?.date ?? '',
-          description: e.transactions?.description ?? '',
-          memo: e.transactions?.memo ?? '',
-          debit: e.debit_amount ?? 0,
-          credit: e.credit_amount ?? 0,
-        })))
+      const grouped: Record<string, DetailEntry> = {}
+      data.forEach((e: any) => {
+        const txnId = e.transactions?.id
+        const debit = e.debit_amount ?? 0
+        const credit = e.credit_amount ?? 0
+        if (debit === 0 && credit === 0) return
+        // 資産は借方増(+)・貸方減(-), 負債は貸方増(+)・借方減(-)
+        const amount = accountType === 'asset' ? debit - credit : credit - debit
+        const sign: '+' | '-' = amount >= 0 ? '+' : '-'
+        if (!grouped[txnId]) {
+          grouped[txnId] = {
+            txnId,
+            date: e.transactions?.date ?? '',
+            description: e.transactions?.description ?? '',
+            total: 0,
+            sign: '+',
+            lines: [],
+          }
+        }
+        grouped[txnId].total += amount
+        const lineMemo = e.memo || e.transactions?.memo || ''
+        grouped[txnId].lines.push({ memo: lineMemo, amount: Math.abs(amount), sign })
+      })
+      const result = Object.values(grouped).map(g => ({ ...g, sign: g.total >= 0 ? '+' as const : '-' as const, total: Math.abs(g.total) }))
+      setDetails(result)
     }
     setDetailLoading(false)
   }
@@ -88,9 +109,9 @@ export default function BalanceSheetPage() {
   const totalLiabilities = liabilities.reduce((s, a) => s + a.balance, 0)
   const netWorth = totalAssets - totalLiabilities
 
-  const renderAccountRows = (list: AccountBalance[]) => list.map(a => (
+  const renderAccountRows = (list: AccountBalance[], type: 'asset' | 'liability') => list.map(a => (
     <div key={a.id}>
-      <div onClick={() => toggleDetail(a.id)}
+      <div onClick={() => toggleDetail(a.id, type)}
         className="flex justify-between items-center px-4 py-3 border-b cursor-pointer active:opacity-70"
         style={{ borderColor: 'var(--border)' }}>
         <span className="text-sm flex items-center gap-1.5" style={{ color: 'var(--text2)' }}>
@@ -108,17 +129,42 @@ export default function BalanceSheetPage() {
           ) : details.length === 0 ? (
             <p className="text-xs text-center py-3" style={{ color: 'var(--text3)' }}>明細なし</p>
           ) : details.map((d, i) => (
-            <div key={i} onClick={() => router.push(`/dashboard/transactions/${d.txnId}?from=balance-sheet`)}
-              className="flex justify-between items-center px-6 py-2 border-b cursor-pointer active:opacity-70"
-              style={{ borderColor: 'var(--border)' }}>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium truncate" style={{ color: 'var(--text)' }}>{d.description || '（内容なし）'}</p>
-                <p className="text-xs" style={{ color: 'var(--text3)' }}>{d.date}{d.memo ? `・${d.memo}` : ''}</p>
+            <div key={i} className="border-b" style={{ borderColor: 'var(--border)' }}>
+              <div
+                onClick={() => setExpandedTxn(expandedTxn === d.txnId ? null : d.txnId)}
+                className="flex justify-between items-center px-6 py-2 cursor-pointer active:opacity-70"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-medium truncate" style={{ color: 'var(--text)' }}>{d.description || '（内容なし）'}</p>
+                  <p className="text-xs" style={{ color: 'var(--text3)' }}>{d.date}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  <span className="text-xs font-medium" style={{ color: d.sign === '+' ? 'var(--accent)' : '#f87171' }}>
+                    {d.sign === '+' ? '+' : '-'}¥{d.total.toLocaleString()}
+                  </span>
+                  {(d.lines.length > 1 || d.lines.some(l => l.memo)) && (
+                    <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{expandedTxn === d.txnId ? '▲' : '▼'}</span>
+                  )}
+                </div>
               </div>
-              <div className="text-right shrink-0 ml-2">
-                {d.debit > 0 && <p className="text-xs" style={{ color: 'var(--text)' }}>+¥{d.debit.toLocaleString()}</p>}
-                {d.credit > 0 && <p className="text-xs" style={{ color: '#f87171' }}>-¥{d.credit.toLocaleString()}</p>}
-              </div>
+              {expandedTxn === d.txnId && (
+                <div className="pb-1" style={{ backgroundColor: 'var(--bg2)' }}>
+                  {d.lines.map((line, j) => (
+                    <div key={j} className="flex justify-between items-center px-8 py-1">
+                      <p className="text-xs" style={{ color: 'var(--text3)' }}>{line.memo || '（内容なし）'}</p>
+                      <p className="text-xs" style={{ color: line.sign === '+' ? 'var(--text3)' : '#f87171' }}>
+                        {line.sign === '-' ? '-' : ''}¥{line.amount.toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                  <div className="px-6 pt-1">
+                    <button onClick={() => router.push(`/dashboard/transactions/${d.txnId}?from=balance-sheet`)}
+                      className="text-xs" style={{ color: 'var(--accent)' }}>
+                      取引詳細 →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -158,7 +204,7 @@ export default function BalanceSheetPage() {
               </div>
               <div style={{ backgroundColor: 'var(--bg2)' }}>
                 {assets.length === 0 ? <p className="text-sm text-center py-4" style={{ color: 'var(--text3)' }}>データなし</p>
-                  : renderAccountRows(assets)}
+                  : renderAccountRows(assets, 'asset')}
                 <div className="flex justify-between items-center px-4 py-3 border-t"
                   style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg3)' }}>
                   <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>資産合計</span>
@@ -173,7 +219,7 @@ export default function BalanceSheetPage() {
               </div>
               <div style={{ backgroundColor: 'var(--bg2)' }}>
                 {liabilities.length === 0 ? <p className="text-sm text-center py-4" style={{ color: 'var(--text3)' }}>データなし</p>
-                  : renderAccountRows(liabilities)}
+                  : renderAccountRows(liabilities, 'liability')}
                 <div className="flex justify-between items-center px-4 py-3 border-t"
                   style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg3)' }}>
                   <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>負債合計</span>
