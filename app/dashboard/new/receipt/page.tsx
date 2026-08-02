@@ -67,6 +67,7 @@ function ReceiptInputContent() {
       if (pm) setPaymentMethodId(pm.id)
     }
     if (expEntries.length > 0) {
+      setDefaultTaxIncluded(true)
       setLines(expEntries.map((e: any, i: number) => ({
         id: i + 1,
         accountId: e.account_id,
