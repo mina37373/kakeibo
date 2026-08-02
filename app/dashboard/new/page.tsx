@@ -260,7 +260,7 @@ function NewTransactionForm() {
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
                 {type === 'expense' ? 'お店' : type === 'income' ? '収入元' : '摘要'}
               </label>
-              <input type="text" value={description}
+              <input type="text" inputMode="text" lang="ja" value={description}
                 onChange={e => { setDescription(e.target.value); fetchSuggestions(e.target.value); setShowSuggestions(true); suggestCategory(e.target.value) }}
                 onFocus={() => { if (description) { fetchSuggestions(description); setShowSuggestions(true) } }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
@@ -285,7 +285,7 @@ function NewTransactionForm() {
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
                 {type === 'expense' ? '内容' : type === 'income' ? '内容' : 'メモ'}
               </label>
-              <input type="text" value={memo} onChange={e => setMemo(e.target.value)}
+              <input type="text" inputMode="text" lang="ja" value={memo} onChange={e => setMemo(e.target.value)}
                 placeholder={type === 'expense' ? '例: 食料品、日用品' : type === 'income' ? '例: 給料、ボーナス' : ''}
                 className="w-full rounded-xl border px-4 py-3 text-sm outline-none placeholder:opacity-40"
                 style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }} />

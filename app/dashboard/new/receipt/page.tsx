@@ -445,7 +445,7 @@ function ReceiptInputContent() {
           </div>
           <div className="relative">
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text3)' }}>お店</label>
-            <input type="text" value={description}
+            <input type="text" inputMode="text" lang="ja" value={description}
               onChange={e => { setDescription(e.target.value); fetchSuggestions(e.target.value); setShowSuggestions(true) }}
               onFocus={() => { if (description) { fetchSuggestions(description); setShowSuggestions(true) } }}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
@@ -580,6 +580,8 @@ function ReceiptInputContent() {
                     <div className="flex-1 relative min-w-0">
                       <input
                         type="text"
+                        inputMode="text"
+                        lang="ja"
                         value={accountOpen === line.id
                           ? (accountQuery[line.id] ?? '')
                           : (expenseAccounts.find(a => a.id === line.accountId)?.name ?? '')}
@@ -634,7 +636,7 @@ function ReceiptInputContent() {
                   </div>
                   {/* 2行目: 内容 */}
                   <div className="flex items-center gap-1.5 mt-1 pl-5">
-                    <input type="text" value={line.memo}
+                    <input type="text" inputMode="text" lang="ja" value={line.memo}
                       onChange={e => updateLine(line.id, 'memo', e.target.value)}
                       placeholder="内容"
                       className="flex-1 rounded-lg border px-2 py-1 text-xs outline-none placeholder:opacity-40 min-w-0"
