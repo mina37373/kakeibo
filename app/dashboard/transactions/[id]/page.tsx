@@ -208,24 +208,40 @@ export default function TransactionDetailPage() {
                 <p className="text-xs font-medium" style={{ color: 'var(--text2)' }}>仕訳明細</p>
               </div>
               <div style={{ backgroundColor: 'var(--bg2)' }}>
-                {txn.journal_entries.map(entry => (
-                  <div key={entry.id} className="flex justify-between items-center px-4 py-3 border-b last:border-b-0"
-                    style={{ borderColor: 'var(--border)' }}>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>{entry.accounts?.name}</span>
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg3)', color: 'var(--text3)' }}>
-                          {entry.accounts?.type === 'expense' ? '支出' : entry.accounts?.type === 'income' ? '収入' : entry.accounts?.type === 'asset' ? '資産' : '負債'}
-                        </span>
+                {/* 借方・貸方ヘッダー */}
+                <div className="grid grid-cols-2 border-b" style={{ borderColor: 'var(--border)' }}>
+                  <div className="px-3 py-1.5 text-xs font-medium" style={{ color: 'var(--text3)' }}>借方</div>
+                  <div className="px-3 py-1.5 text-xs font-medium border-l" style={{ color: 'var(--text3)', borderColor: 'var(--border)' }}>貸方</div>
+                </div>
+                {/* 借方・貸方を左右に並べる */}
+                {(() => {
+                  const debits = txn.journal_entries.filter(e => e.debit_amount > 0)
+                  const credits = txn.journal_entries.filter(e => e.credit_amount > 0)
+                  const rows = Math.max(debits.length, credits.length)
+                  const typeLabel = (t: string) => t === 'expense' ? '費用' : t === 'income' ? '収益' : t === 'asset' ? '資産' : '負債'
+                  return Array.from({ length: rows }).map((_, i) => {
+                    const d = debits[i]
+                    const c = credits[i]
+                    return (
+                      <div key={i} className="grid grid-cols-2 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
+                        <div className="px-3 py-2.5">
+                          {d ? <>
+                            <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{d.accounts?.name}</p>
+                            <p className="text-xs" style={{ color: 'var(--text3)' }}>{typeLabel(d.accounts?.type)} ¥{d.debit_amount.toLocaleString()}</p>
+                            {d.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{d.memo}</p>}
+                          </> : null}
+                        </div>
+                        <div className="px-3 py-2.5 border-l" style={{ borderColor: 'var(--border)' }}>
+                          {c ? <>
+                            <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>{c.accounts?.name}</p>
+                            <p className="text-xs" style={{ color: 'var(--text3)' }}>{typeLabel(c.accounts?.type)} ¥{c.credit_amount.toLocaleString()}</p>
+                            {c.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{c.memo}</p>}
+                          </> : null}
+                        </div>
                       </div>
-                      {entry.memo && <p className="text-xs mt-0.5" style={{ color: 'var(--text3)' }}>{entry.memo}</p>}
-                    </div>
-                    <div className="flex gap-3 text-xs">
-                      {entry.debit_amount > 0 && <span style={{ color: 'var(--text2)' }}>借 ¥{entry.debit_amount.toLocaleString()}</span>}
-                      {entry.credit_amount > 0 && <span style={{ color: 'var(--accent)' }}>貸 ¥{entry.credit_amount.toLocaleString()}</span>}
-                    </div>
-                  </div>
-                ))}
+                    )
+                  })
+                })()}
               </div>
             </div>
 

@@ -570,13 +570,16 @@ export default function ReceiptInputPage() {
                         style={{ color: 'var(--text3)', backgroundColor: 'var(--bg3)' }}>✕</button>
                     )}
                   </div>
-                  {/* 2行目: 内容・税率・税額 */}
+                  {/* 2行目: 内容 */}
                   <div className="flex items-center gap-1.5 mt-1 pl-5">
                     <input type="text" value={line.memo}
                       onChange={e => updateLine(line.id, 'memo', e.target.value)}
                       placeholder="内容"
                       className="flex-1 rounded-lg border px-2 py-1 text-xs outline-none placeholder:opacity-40 min-w-0"
                       style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }} />
+                  </div>
+                  {/* 3行目: 税率・税額 */}
+                  <div className="flex items-center gap-1.5 mt-1 pl-5">
                     {([0, 8, 10] as TaxRate[]).map(r => (
                       <button key={r} type="button" onClick={() => updateLine(line.id, 'taxRate', r)}
                         className="text-xs px-1.5 py-0.5 rounded-lg border shrink-0"
@@ -587,10 +590,10 @@ export default function ReceiptInputPage() {
                         }}>{r === 0 ? '非課' : `${r}%`}</button>
                     ))}
                     {line.taxRate > 0 && line.amount && (
-                      <span className="text-[10px] shrink-0" style={{ color: 'var(--text3)' }}>
+                      <span className="text-xs shrink-0" style={{ color: 'var(--text3)' }}>
                         {line.taxIncluded
-                          ? `税¥${taxAmt.toLocaleString()}`
-                          : `税¥${taxAmt.toLocaleString()}→¥${totalAmt.toLocaleString()}`}
+                          ? `税 ¥${taxAmt.toLocaleString()}`
+                          : `税 ¥${taxAmt.toLocaleString()} → ¥${totalAmt.toLocaleString()}`}
                       </span>
                     )}
                   </div>
