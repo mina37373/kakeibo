@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function AuthConfirmPage() {
+function ConfirmInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -19,7 +19,7 @@ export default function AuthConfirmPage() {
         }
       })
     } else {
-      router.push('/login')
+      window.location.href = '/login'
     }
   }, [router, searchParams])
 
@@ -27,5 +27,13 @@ export default function AuthConfirmPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
       <p className="text-white text-sm">ログイン中...</p>
     </div>
+  )
+}
+
+export default function AuthConfirmPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center"><p className="text-white text-sm">読み込み中...</p></div>}>
+      <ConfirmInner />
+    </Suspense>
   )
 }
