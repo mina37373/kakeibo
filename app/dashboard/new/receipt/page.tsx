@@ -533,9 +533,9 @@ export default function ReceiptInputPage() {
                     {line.taxRate > 0 && line.amount && (
                       <span className="text-xs ml-auto" style={{ color: 'var(--text3)' }}>
                         {line.taxIncluded ? (
-                          <>税込¥{totalAmt.toLocaleString()} 税抜¥{(totalAmt - taxAmt).toLocaleString()} 税¥{taxAmt.toLocaleString()}</>
+                          <>税抜¥{(totalAmt - taxAmt).toLocaleString()} 税¥{taxAmt.toLocaleString()}</>
                         ) : (
-                          <>税¥{taxAmt.toLocaleString()} → <span style={{ color: 'var(--text)' }}>税込¥{totalAmt.toLocaleString()}</span></>
+                          <>税¥{taxAmt.toLocaleString()} → 税込¥{totalAmt.toLocaleString()}</>
                         )}
                       </span>
                     )}
