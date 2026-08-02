@@ -69,7 +69,9 @@ export default function CalendarPage() {
           .gte('transactions.date', from)
           .lte('transactions.date', to)
         const estimated = (entries ?? []).reduce((s: number, e: any) => s + (e.credit_amount ?? 0), 0)
-        const debitAccount = pm.debit_pm_id ? pmNameMap[pm.debit_pm_id] : undefined
+        const ccBankMap: Record<string, string> = JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}')
+        const debitPmId = ccBankMap[pm.id] ?? pm.debit_pm_id
+        const debitAccount = debitPmId ? pmNameMap[debitPmId] : undefined
         allEvents.push({ day: pm.payment_day, name: pm.name, amount: estimated, kind: 'credit', debitAccount })
       }
     }
