@@ -107,21 +107,18 @@ export default function TransactionDetailPage() {
       <Header title="取引詳細" backPath="/dashboard/transactions" right={
         (() => {
           const isReceipt = txn.journal_entries.some(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
-          return (
-            <div className="flex gap-2">
-              {isReceipt && (
-                <button onClick={() => router.push(`/dashboard/new/receipt?edit=${txn.id}`)}
-                  className="text-xs border rounded-lg px-3 py-1.5"
-                  style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}>
-                  🧾 明細編集
-                </button>
-              )}
-              <button onClick={() => setEditing(!editing)}
-                className="text-xs border rounded-lg px-3 py-1.5"
-                style={{ color: editing ? 'var(--accent)' : 'var(--text3)', borderColor: editing ? 'var(--accent)' : 'var(--border)' }}>
-                {editing ? 'キャンセル' : '✏️ 編集'}
-              </button>
-            </div>
+          return isReceipt ? (
+            <button onClick={() => router.push(`/dashboard/new/receipt?edit=${txn.id}`)}
+              className="text-xs border rounded-lg px-3 py-1.5"
+              style={{ color: 'var(--text3)', borderColor: 'var(--border)' }}>
+              ✏️ 編集
+            </button>
+          ) : (
+            <button onClick={() => setEditing(!editing)}
+              className="text-xs border rounded-lg px-3 py-1.5"
+              style={{ color: editing ? 'var(--accent)' : 'var(--text3)', borderColor: editing ? 'var(--accent)' : 'var(--border)' }}>
+              {editing ? 'キャンセル' : '✏️ 編集'}
+            </button>
           )
         })()
       } />
