@@ -121,7 +121,6 @@ export default function TransactionDetailPage() {
                 style={{ color: editing ? 'var(--accent)' : 'var(--text3)', borderColor: editing ? 'var(--accent)' : 'var(--border)' }}>
                 {editing ? 'キャンセル' : '✏️ 編集'}
               </button>
-              )}
             </div>
           )
         })()
