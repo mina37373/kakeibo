@@ -52,17 +52,25 @@ export default function SettingsPage() {
   const [newPaymentDay, setNewPaymentDay] = useState('10')
   const [newDebitPmId, setNewDebitPmId] = useState('')
   const [tab, setTab] = useState<'accounts' | 'payments' | 'theme' | 'opening' | 'alert'>('accounts')
-  const [pinnedIds, setPinnedIds] = useState<string[]>(() => JSON.parse(localStorage.getItem('pinned_accounts') ?? '[]'))
+  const [pinnedIds, setPinnedIds] = useState<string[]>([])
+
+  useEffect(() => {
+    setPinnedIds(JSON.parse(localStorage.getItem('pinned_accounts') ?? '[]'))
+    setRecurringAlertDays(Number(localStorage.getItem('alert_recurring_days') ?? 7))
+    setRecurringUrgentDays(Number(localStorage.getItem('alert_recurring_urgent') ?? 1))
+    setCreditAlertDays(Number(localStorage.getItem('alert_credit_days') ?? 7))
+    setCreditUrgentDays(Number(localStorage.getItem('alert_credit_urgent') ?? 1))
+  }, [])
 
   const togglePin = (id: string) => {
     const next = pinnedIds.includes(id) ? pinnedIds.filter(p => p !== id) : [...pinnedIds, id]
     setPinnedIds(next)
     localStorage.setItem('pinned_accounts', JSON.stringify(next))
   }
-  const [recurringAlertDays, setRecurringAlertDays] = useState(() => Number(localStorage.getItem('alert_recurring_days') ?? 7))
-  const [recurringUrgentDays, setRecurringUrgentDays] = useState(() => Number(localStorage.getItem('alert_recurring_urgent') ?? 1))
-  const [creditAlertDays, setCreditAlertDays] = useState(() => Number(localStorage.getItem('alert_credit_days') ?? 7))
-  const [creditUrgentDays, setCreditUrgentDays] = useState(() => Number(localStorage.getItem('alert_credit_urgent') ?? 1))
+  const [recurringAlertDays, setRecurringAlertDays] = useState(7)
+  const [recurringUrgentDays, setRecurringUrgentDays] = useState(1)
+  const [creditAlertDays, setCreditAlertDays] = useState(7)
+  const [creditUrgentDays, setCreditUrgentDays] = useState(1)
   const { themeId, setThemeId } = useTheme()
   const { householdId, inviteCode, members, joinHousehold } = useHousehold()
   const [joinCode, setJoinCode] = useState('')
