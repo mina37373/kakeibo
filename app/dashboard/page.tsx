@@ -5,18 +5,33 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Page } from '@/components/ui'
 
+type RecurringAlert = { id: string; name: string; amount: number; day_of_month: number; today: boolean }
+
 export default function DashboardPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [monthTotal, setMonthTotal] = useState(0)
   const [monthIncome, setMonthIncome] = useState(0)
+  const [recurringAlerts, setRecurringAlerts] = useState<RecurringAlert[]>([])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) router.push('/login')
-      else { setEmail(session.user.email ?? ''); fetchMonthTotal() }
+      else { setEmail(session.user.email ?? ''); fetchMonthTotal(); fetchRecurringAlerts() }
     })
   }, [router])
+
+  const fetchRecurringAlerts = async () => {
+    const today = new Date().getDate()
+    const tomorrow = today + 1
+    const { data } = await supabase.from('recurring_transactions').select('id, name, amount, day_of_month').eq('is_active', true)
+    if (data) {
+      const alerts = data
+        .filter((r: any) => r.day_of_month === today || r.day_of_month === tomorrow)
+        .map((r: any) => ({ ...r, today: r.day_of_month === today }))
+      setRecurringAlerts(alerts)
+    }
+  }
 
   const fetchMonthTotal = async () => {
     const month = new Date().toISOString().slice(0, 7)
@@ -85,7 +100,29 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* 収支カード */}
+        {/* 定期支払いアラート */}
+      {recurringAlerts.length > 0 && (
+        <div className="px-5 pb-2 flex flex-col gap-2">
+          {recurringAlerts.map(r => (
+            <button key={r.id} onClick={() => router.push('/dashboard/recurring')}
+              className="w-full text-left rounded-2xl border px-4 py-3 flex items-center gap-3"
+              style={{ backgroundColor: r.today ? '#fef3c7' : 'var(--bg2)', borderColor: r.today ? '#f59e0b' : 'var(--border)' }}>
+              <span className="text-lg">{r.today ? '🔔' : '📅'}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold" style={{ color: r.today ? '#92400e' : 'var(--text2)' }}>
+                  {r.today ? '今日が支払日' : '明日が支払日'}
+                </p>
+                <p className="text-sm truncate" style={{ color: r.today ? '#78350f' : 'var(--text)' }}>
+                  {r.name}{r.amount > 0 ? `　¥${r.amount.toLocaleString()}` : '　（金額変動）'}
+                </p>
+              </div>
+              <span className="text-xs" style={{ color: r.today ? '#92400e' : 'var(--text3)' }}>›</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 収支カード */}
         <div className="rounded-2xl border p-5" style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
           <p className="text-xs mb-1" style={{ color: 'var(--text3)' }}>{monthLabel}</p>
           <div className="mb-4">
