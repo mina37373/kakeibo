@@ -57,10 +57,10 @@ export default function TransactionsPage() {
   }
 
   const getAmount = (txn: Transaction) => {
-    const exp = txn.journal_entries.find(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
-    if (exp) return { amount: exp.debit_amount, type: 'expense' as const, label: exp.accounts?.name }
-    const inc = txn.journal_entries.find(e => e.accounts?.type === 'income' && e.credit_amount > 0)
-    if (inc) return { amount: inc.credit_amount, type: 'income' as const, label: inc.accounts?.name }
+    const exps = txn.journal_entries.filter(e => e.accounts?.type === 'expense' && e.debit_amount > 0)
+    if (exps.length > 0) return { amount: exps.reduce((s, e) => s + e.debit_amount, 0), type: 'expense' as const, label: exps[0].accounts?.name }
+    const incs = txn.journal_entries.filter(e => e.accounts?.type === 'income' && e.credit_amount > 0)
+    if (incs.length > 0) return { amount: incs.reduce((s, e) => s + e.credit_amount, 0), type: 'income' as const, label: incs[0].accounts?.name }
     const tr = txn.journal_entries.find(e => e.accounts?.type === 'asset' && e.debit_amount > 0)
     if (tr) return { amount: tr.debit_amount, type: 'transfer' as const, label: '振替' }
     return { amount: 0, type: 'expense' as const, label: '' }

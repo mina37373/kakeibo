@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Page, Header } from '@/components/ui'
@@ -12,6 +12,10 @@ type TaxRate = 0 | 8 | 10
 type Line = { id: number; accountId: string; amount: string; taxRate: TaxRate; taxIncluded: boolean; memo: string }
 
 export default function ReceiptInputPage() {
+  return <Suspense><ReceiptInputContent /></Suspense>
+}
+
+function ReceiptInputContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
