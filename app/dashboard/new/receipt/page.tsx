@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Page, Header } from '@/components/ui'
 import { useHousehold } from '@/lib/household'
@@ -13,6 +13,8 @@ type Line = { id: number; accountId: string; amount: string; taxRate: TaxRate; t
 
 export default function ReceiptInputPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editId = searchParams.get('edit')
   const { householdId } = useHousehold()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
@@ -40,9 +42,37 @@ export default function ReceiptInputPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) router.push('/login')
-      else fetchMasters()
+      else { fetchMasters(); if (editId) loadEditData(editId) }
     })
   }, [router])
+
+  const loadEditData = async (txnId: string) => {
+    const { data } = await supabase
+      .from('transactions')
+      .select('*, journal_entries(id, account_id, debit_amount, credit_amount, memo, accounts(type))')
+      .eq('id', txnId).single()
+    if (!data) return
+    setDate(data.date)
+    setDescription(data.description ?? '')
+    const expEntries = data.journal_entries.filter((e: any) => e.accounts?.type === 'expense' && e.debit_amount > 0)
+    const pmEntry = data.journal_entries.find((e: any) => e.accounts?.type === 'asset' && e.credit_amount > 0)
+    if (pmEntry) {
+      // payment_methodsからaccount_idが一致するものを探す
+      const { data: pms } = await supabase.from('payment_methods').select('id, account_id')
+      const pm = (pms ?? []).find((p: any) => p.account_id === pmEntry.account_id)
+      if (pm) setPaymentMethodId(pm.id)
+    }
+    if (expEntries.length > 0) {
+      setLines(expEntries.map((e: any, i: number) => ({
+        id: i + 1,
+        accountId: e.account_id,
+        amount: String(e.debit_amount),
+        taxRate: 10 as TaxRate,
+        taxIncluded: true,
+        memo: e.memo ?? '',
+      })))
+    }
+  }
 
   const fetchMasters = async () => {
     const { data: accs } = await supabase.from('accounts').select('*').order('display_order')
@@ -329,44 +359,52 @@ export default function ReceiptInputPage() {
     const pm = paymentMethods.find(p => p.id === paymentMethodId)
     if (!pm) return
 
-    const { data: txn } = await supabase.from('transactions')
-      .insert({ date, description, created_by: session.user.id, household_id: householdId })
-      .select().single()
+    let txnId: string
+    if (editId) {
+      // 編集モード: transactionを更新、journal_entriesを削除して再登録
+      await supabase.from('transactions').update({ date, description }).eq('id', editId)
+      await supabase.from('journal_entries').delete().eq('transaction_id', editId)
+      txnId = editId
+    } else {
+      const { data: txn } = await supabase.from('transactions')
+        .insert({ date, description, created_by: session.user.id, household_id: householdId })
+        .select().single()
+      if (!txn) { setLoading(false); return }
+      txnId = txn.id
+    }
 
-    if (txn) {
-      const entries: any[] = []
-      for (const line of validLines) {
-        const amt = calcTaxIncluded(line)
-        entries.push({ transaction_id: txn.id, account_id: line.accountId, debit_amount: amt, credit_amount: 0, memo: line.memo || null })
-        entries.push({ transaction_id: txn.id, account_id: pm.account_id, debit_amount: 0, credit_amount: amt })
+    const entries: any[] = []
+    for (const line of validLines) {
+      const amt = calcTaxIncluded(line)
+      entries.push({ transaction_id: txnId, account_id: line.accountId, debit_amount: amt, credit_amount: 0, memo: line.memo || null })
+      entries.push({ transaction_id: txnId, account_id: pm.account_id, debit_amount: 0, credit_amount: amt })
+    }
+    await supabase.from('journal_entries').insert(entries)
+
+    if (!editId && receiptFiles.length > 0) {
+      const urls: string[] = []
+      for (let i = 0; i < receiptFiles.length; i++) {
+        const file = receiptFiles[i]
+        const ext = file.name.split('.').pop()
+        const path = `${session.user.id}/${txnId}_${i}.${ext}`
+        const { data: uploaded } = await supabase.storage.from('receipts').upload(path, file)
+        if (uploaded) {
+          const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(path)
+          urls.push(publicUrl)
+        }
       }
-      await supabase.from('journal_entries').insert(entries)
-
-      if (receiptFiles.length > 0) {
-        const urls: string[] = []
-        for (let i = 0; i < receiptFiles.length; i++) {
-          const file = receiptFiles[i]
-          const ext = file.name.split('.').pop()
-          const path = `${session.user.id}/${txn.id}_${i}.${ext}`
-          const { data: uploaded } = await supabase.storage.from('receipts').upload(path, file)
-          if (uploaded) {
-            const { data: { publicUrl } } = supabase.storage.from('receipts').getPublicUrl(path)
-            urls.push(publicUrl)
-          }
-        }
-        if (urls.length > 0) {
-          await supabase.from('transactions').update({ receipt_url: urls[0] }).eq('id', txn.id)
-        }
+      if (urls.length > 0) {
+        await supabase.from('transactions').update({ receipt_url: urls[0] }).eq('id', txnId)
       }
     }
 
-    router.push('/dashboard/transactions')
+    router.push(editId ? `/dashboard/transactions/${editId}` : '/dashboard/transactions')
     setLoading(false)
   }
 
   return (
     <Page>
-      <Header title="レシート入力" backPath="/dashboard/new" />
+      <Header title={editId ? 'レシート編集' : 'レシート入力'} backPath={editId ? `/dashboard/transactions/${editId}` : '/dashboard/new'} />
       <main className="max-w-lg mx-auto p-4 flex flex-col gap-4">
 
         {/* ヘッダー情報 */}

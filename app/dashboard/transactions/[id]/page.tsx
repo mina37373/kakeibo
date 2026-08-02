@@ -104,11 +104,18 @@ export default function TransactionDetailPage() {
   return (
     <Page>
       <Header title="取引詳細" backPath="/dashboard/transactions" right={
-        <button onClick={() => setEditing(!editing)}
-          className="text-xs border rounded-lg px-3 py-1.5"
-          style={{ color: editing ? 'var(--accent)' : 'var(--text3)', borderColor: editing ? 'var(--accent)' : 'var(--border)' }}>
-          {editing ? 'キャンセル' : '✏️ 編集'}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => router.push(`/dashboard/new/receipt?edit=${txn.id}`)}
+            className="text-xs border rounded-lg px-3 py-1.5"
+            style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }}>
+            🧾 明細編集
+          </button>
+          <button onClick={() => setEditing(!editing)}
+            className="text-xs border rounded-lg px-3 py-1.5"
+            style={{ color: editing ? 'var(--accent)' : 'var(--text3)', borderColor: editing ? 'var(--accent)' : 'var(--border)' }}>
+            {editing ? 'キャンセル' : '✏️ 編集'}
+          </button>
+        </div>
       } />
 
       <main className="max-w-lg mx-auto p-4 flex flex-col gap-4">
