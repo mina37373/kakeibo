@@ -12,10 +12,15 @@ export default function DashboardPage() {
   const [monthIncome, setMonthIncome] = useState(0)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.push('/login')
-      else { setEmail(session.user.email ?? ''); fetchMonthTotal() }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (!session) router.push('/login')
+        else { setEmail(session.user.email ?? ''); fetchMonthTotal() }
+      } else if (event === 'SIGNED_OUT') {
+        router.push('/login')
+      }
     })
+    return () => subscription.unsubscribe()
   }, [router])
 
   const fetchMonthTotal = async () => {
