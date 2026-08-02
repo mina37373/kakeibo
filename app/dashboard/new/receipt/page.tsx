@@ -48,7 +48,10 @@ export default function ReceiptInputPage() {
     const { data: accs } = await supabase.from('accounts').select('*').order('display_order')
     if (accs) setAccounts(accs)
     const { data: pms } = await supabase.from('payment_methods').select('*').order('created_at')
-    if (pms) setPaymentMethods(pms)
+    if (pms) {
+      const kindOrder: Record<string, number> = { cash: 0, bank: 1, debit: 2, credit_card: 3, e_money: 4, other: 5 }
+      setPaymentMethods([...pms].sort((a, b) => (kindOrder[a.kind] ?? 9) - (kindOrder[b.kind] ?? 9)))
+    }
   }
 
   const parseReceiptText = (text: string) => {
