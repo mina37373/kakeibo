@@ -23,8 +23,13 @@ export default function LoginPage() {
       if (error) setError('メールアドレスまたはパスワードが違います')
       else router.push('/dashboard')
     } else if (mode === 'reset') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email)
-      if (error) setError('メール送信に失敗しました: ' + error.message)
+      const res = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await res.json()
+      if (!res.ok) setError('メール送信に失敗しました: ' + data.error)
       else setResetSent(true)
     } else {
       const { error } = await supabase.auth.signUp({ email, password })
