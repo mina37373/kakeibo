@@ -557,16 +557,14 @@ export default function ReceiptInputPage() {
             <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>明細合計（税込）</span>
             <span className="text-lg font-bold" style={{ color: 'var(--text)' }}>¥{subtotal.toLocaleString()}</span>
           </div>
-          {(tax8 > 0 || tax10 > 0) && (
-            <div className="flex flex-col gap-1 pl-1">
-              {tax8 > 0 && <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
-                <span>消費税（8%）</span><span>¥{tax8.toLocaleString()}</span>
-              </div>}
-              {tax10 > 0 && <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
-                <span>消費税（10%）</span><span>¥{tax10.toLocaleString()}</span>
-              </div>}
+          <div className="flex flex-col gap-1 pl-1">
+            <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
+              <span>消費税（8%）</span><span>¥{tax8.toLocaleString()}</span>
             </div>
-          )}
+            <div className="flex justify-between text-xs" style={{ color: 'var(--text3)' }}>
+              <span>消費税（10%）</span><span>¥{tax10.toLocaleString()}</span>
+            </div>
+          </div>
           <div className="flex items-center gap-3">
             <label className="text-sm shrink-0" style={{ color: 'var(--text3)' }}>レシート合計</label>
             <div className="flex items-center gap-1 flex-1 rounded-xl border px-3 py-2"
