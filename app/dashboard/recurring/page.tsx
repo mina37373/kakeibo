@@ -16,7 +16,7 @@ type Account = { id: string; name: string; type: string }
 type PaymentMethod = { id: string; name: string }
 type Recurring = {
   id: string; name: string; amount: number; frequency: string
-  day_of_month: number; is_active: boolean
+  day_of_month: number; is_active: boolean; kind: string
   expense_account_id: string; payment_method_id: string
   accounts?: { name: string }; payment_methods?: { name: string }
 }
@@ -53,7 +53,6 @@ export default function RecurringPage() {
   const [paymentMethodId, setPaymentMethodId] = useState('')
   const [transferToAccountId, setTransferToAccountId] = useState('')
   const [execAmounts, setExecAmounts] = useState<Record<string, string>>({})
-  const [transferIds, setTransferIdsState] = useState<string[]>([])
   const { householdId } = useHousehold()
 
   const sensors = useSensors(
@@ -61,15 +60,6 @@ export default function RecurringPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
   )
 
-  const loadTransferIds = () => {
-    const ids: string[] = JSON.parse(localStorage.getItem('recurring_transfer_ids') ?? '[]')
-    setTransferIdsState(ids)
-    return ids
-  }
-  const saveTransferIds = (ids: string[]) => {
-    localStorage.setItem('recurring_transfer_ids', JSON.stringify(ids))
-    setTransferIdsState(ids)
-  }
   const loadOrder = () => {
     const o: string[] = JSON.parse(localStorage.getItem('recurring_order') ?? '[]')
     setOrder(o)
@@ -88,7 +78,6 @@ export default function RecurringPage() {
   }, [router])
 
   const fetchData = async () => {
-    loadTransferIds()
     loadOrder()
     const { data: recs } = await supabase
       .from('recurring_transactions')
@@ -136,7 +125,7 @@ export default function RecurringPage() {
 
   const openEditForm = (rec: Recurring) => {
     setEditingId(rec.id)
-    setRecurringKind(transferIds.includes(rec.id) ? 'transfer' : 'expense')
+    setRecurringKind(rec.kind === 'transfer' ? 'transfer' : 'expense')
     setName(rec.name)
     setAmountType(isVariable(rec) ? 'variable' : 'fixed')
     setAmount(isVariable(rec) ? '' : String(rec.amount))
@@ -165,6 +154,7 @@ export default function RecurringPage() {
         day_of_month: Number(dayOfMonth),
         expense_account_id: saveExpenseId,
         payment_method_id: paymentMethodId,
+        kind: recurringKind,
       }).eq('id', editingId)
       savedId = editingId
     } else {
@@ -173,15 +163,10 @@ export default function RecurringPage() {
         day_of_month: Number(dayOfMonth),
         expense_account_id: saveExpenseId,
         payment_method_id: paymentMethodId,
+        kind: recurringKind,
         household_id: householdId,
       }).select().single()
       savedId = data?.id ?? null
-    }
-
-    if (savedId) {
-      const ids = transferIds.filter(id => id !== savedId)
-      if (recurringKind === 'transfer') ids.push(savedId)
-      saveTransferIds(ids)
     }
 
     setShowForm(false); setEditingId(null)
@@ -216,7 +201,6 @@ export default function RecurringPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('削除しますか？')) return
     await supabase.from('recurring_transactions').delete().eq('id', id)
-    saveTransferIds(transferIds.filter(i => i !== id))
     saveOrder(order.filter(i => i !== id))
     fetchData()
   }
@@ -224,8 +208,8 @@ export default function RecurringPage() {
   const inputStyle = { backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }
 
   const sortedAll = sortedRecurrings(recurrings)
-  const transfers = sortedAll.filter(r => transferIds.includes(r.id))
-  const nonTransfers = sortedAll.filter(r => !transferIds.includes(r.id))
+  const transfers = sortedAll.filter(r => r.kind === 'transfer')
+  const nonTransfers = sortedAll.filter(r => r.kind !== 'transfer')
   const fixed = nonTransfers.filter(r => !isVariable(r))
   const variable = nonTransfers.filter(r => isVariable(r))
 

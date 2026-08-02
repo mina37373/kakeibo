@@ -40,7 +40,7 @@ export default function CalendarPage() {
   const fetchEvents = async () => {
     const allEvents: CalendarEvent[] = []
 
-    const { data: pms } = await supabase.from('payment_methods').select('id, name, kind, closing_day, payment_day')
+    const { data: pms } = await supabase.from('payment_methods').select('id, name, kind, closing_day, payment_day, debit_pm_id')
     const pmNameMap: Record<string, string> = {}
     const pmKindMap: Record<string, string> = {}
     for (const pm of pms ?? []) { pmNameMap[pm.id] = pm.name; pmKindMap[pm.id] = pm.kind }
@@ -69,9 +69,7 @@ export default function CalendarPage() {
           .gte('transactions.date', from)
           .lte('transactions.date', to)
         const estimated = (entries ?? []).reduce((s: number, e: any) => s + (e.credit_amount ?? 0), 0)
-        const ccBankMap: Record<string, string> = JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}')
-        const debitPmId = ccBankMap[pm.id] ?? pm.debit_pm_id
-        const debitAccount = debitPmId ? pmNameMap[debitPmId] : undefined
+        const debitAccount = pm.debit_pm_id ? pmNameMap[pm.debit_pm_id] : undefined
         allEvents.push({ day: pm.payment_day, name: pm.name, amount: estimated, kind: 'credit', debitAccount })
       }
     }

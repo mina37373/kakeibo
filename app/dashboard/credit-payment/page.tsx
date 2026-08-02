@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Page, Header } from '@/components/ui'
 import { useHousehold } from '@/lib/household'
 
-type CreditCard = { id: string; name: string; account_id: string; closing_day: number | null; payment_day: number | null }
+type CreditCard = { id: string; name: string; account_id: string; closing_day: number | null; payment_day: number | null; debit_pm_id?: string | null }
 type BankAccount = { id: string; name: string; account_id: string }
 
 const fmt = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`
@@ -136,7 +136,7 @@ export default function CreditPaymentPage() {
 
     const creditCards: CreditCard[] = pms.filter((p: any) => p.kind === 'credit_card').map((p: any) => ({
       id: p.id, name: p.name, account_id: p.accounts?.id,
-      closing_day: p.closing_day, payment_day: p.payment_day,
+      closing_day: p.closing_day, payment_day: p.payment_day, debit_pm_id: p.debit_pm_id,
     }))
     setCards(creditCards)
     setBankAccounts(pms.filter((p: any) => ['bank', 'emoney', 'cash'].includes(p.kind)).map((p: any) => ({
@@ -232,10 +232,8 @@ export default function CreditPaymentPage() {
         {cards.map(card => {
           const c = card.closing_day && card.payment_day
             ? getBillingCycle(card.closing_day, card.payment_day) : null
-          const ccBankMap: Record<string, string> = typeof window !== 'undefined'
-            ? JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}') : {}
-          const debitBankName = ccBankMap[card.id]
-            ? (bankAccounts.find(b => b.id === ccBankMap[card.id])?.name ?? null) : null
+          const debitBankName = card.debit_pm_id
+            ? (bankAccounts.find(b => b.id === card.debit_pm_id)?.name ?? null) : null
           return (
             <div key={card.id} className="rounded-2xl border p-4" style={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between mb-3">
@@ -291,8 +289,7 @@ export default function CreditPaymentPage() {
                   setDate(new Date().toISOString().slice(0, 10))
                 }
                 // 引き落とし口座を自動セット
-                const ccBankMap: Record<string, string> = JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}')
-                if (ccBankMap[cardId]) setSelectedBankPmId(ccBankMap[cardId])
+                if (card?.debit_pm_id) setSelectedBankPmId(card.debit_pm_id)
               }}
                 className="w-full rounded-xl border px-3 py-2.5 text-sm outline-none"
                 style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}>

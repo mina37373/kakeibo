@@ -140,9 +140,7 @@ export default function SettingsPage() {
         payment_day: newPmKind === 'credit_card' ? Number(newPaymentDay) : null,
       }).select().single()
       if (pm && newPmKind === 'credit_card' && newDebitPmId) {
-        const map: Record<string, string> = JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}')
-        map[pm.id] = newDebitPmId
-        localStorage.setItem('cc_bank_map', JSON.stringify(map))
+        await supabase.from('payment_methods').update({ debit_pm_id: newDebitPmId }).eq('id', pm.id)
       }
     }
     setNewPmName('')
@@ -451,9 +449,8 @@ export default function SettingsPage() {
                     <SortableContext items={items.map(p => p.id)} strategy={verticalListSortingStrategy}>
                       <div className="flex flex-col gap-1.5">
                         {items.map(pm => {
-                          const ccBankMap: Record<string, string> = typeof window !== 'undefined'
-                            ? JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}') : {}
-                          const linkedPm = pm.kind === 'credit_card' ? paymentMethods.find(p => p.id === ccBankMap[pm.id]) : null
+                          const linkedPm = pm.kind === 'credit_card' && pm.debit_pm_id
+                            ? paymentMethods.find(p => p.id === pm.debit_pm_id) : null
                           return (
                             <SortableItem key={pm.id} id={pm.id}>
                               {handle => (
@@ -470,14 +467,10 @@ export default function SettingsPage() {
                                     )}
                                     {pm.kind === 'credit_card' && (
                                       <select
-                                        value={ccBankMap[pm.id] ?? ''}
-                                        onChange={e => {
-                                          const map: Record<string, string> = JSON.parse(localStorage.getItem('cc_bank_map') ?? '{}')
-                                          if (e.target.value) map[pm.id] = e.target.value
-                                          else delete map[pm.id]
-                                          localStorage.setItem('cc_bank_map', JSON.stringify(map))
-                                          // force re-render
-                                          setPaymentMethods(prev => [...prev])
+                                        value={pm.debit_pm_id ?? ''}
+                                        onChange={async e => {
+                                          await supabase.from('payment_methods').update({ debit_pm_id: e.target.value || null }).eq('id', pm.id)
+                                          fetchData()
                                         }}
                                         className="mt-1 w-full rounded-lg border px-2 py-1 text-xs outline-none"
                                         style={{ backgroundColor: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text3)' }}>
