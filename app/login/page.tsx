@@ -10,7 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
+  const [resetSent, setResetSent] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,6 +22,12 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError('メールアドレスまたはパスワードが違います')
       else router.push('/dashboard')
+    } else if (mode === 'reset') {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://kakeibo-q99m.vercel.app/login',
+      })
+      if (error) setError('メール送信に失敗しました')
+      else setResetSent(true)
     } else {
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) setError('登録に失敗しました: ' + error.message)
@@ -81,14 +88,28 @@ export default function LoginPage() {
             </div>
 
             {error && <p className="text-sm text-center px-2 py-2 rounded-lg bg-red-950 text-red-400">{error}</p>}
+            {resetSent && <p className="text-sm text-center px-2 py-2 rounded-lg bg-green-950 text-green-400">リセットメールを送りました！メールをご確認ください。</p>}
 
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-xl py-3 text-sm font-medium mt-1 transition-colors disabled:opacity-50"
             >
-              {loading ? '処理中...' : mode === 'login' ? 'ログイン' : '登録する'}
+              {loading ? '処理中...' : mode === 'login' ? 'ログイン' : mode === 'reset' ? 'リセットメールを送る' : '登録する'}
             </button>
+
+            {mode === 'login' && (
+              <button type="button" onClick={() => { setMode('reset'); setError(''); setResetSent(false) }}
+                className="text-xs text-slate-400 hover:text-slate-300 text-center w-full">
+                パスワードを忘れた方はこちら
+              </button>
+            )}
+            {mode === 'reset' && (
+              <button type="button" onClick={() => { setMode('login'); setError(''); setResetSent(false) }}
+                className="text-xs text-slate-400 hover:text-slate-300 text-center w-full">
+                ログインに戻る
+              </button>
+            )}
           </form>
         </div>
       </div>
