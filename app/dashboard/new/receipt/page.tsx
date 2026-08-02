@@ -46,9 +46,23 @@ function ReceiptInputContent() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) router.push('/login')
-      else { fetchMasters(); if (editId) loadEditData(editId) }
+      else {
+        fetchMasters()
+        if (editId) {
+          loadEditData(editId)
+        } else {
+          // 新規入力時はフォームをリセット
+          setDate(todayStr)
+          setDescription('')
+          setPaymentMethodId('')
+          setLines([{ id: 1, accountId: '', amount: '', taxRate: 10, taxIncluded: false, memo: '' }])
+          setDefaultTaxIncluded(false)
+          setReceiptTotal('')
+          setError('')
+        }
+      }
     })
-  }, [router])
+  }, [editId])
 
   const loadEditData = async (txnId: string) => {
     const { data } = await supabase
